@@ -55,11 +55,13 @@ class Opcode(IntEnum):
     JUMP_IF_FALSE = 6
     LESS_THAN = 7
     EQUAL = 8
+    ADJUST_BASE = 9
     TERMINATE = 99
 
 class ParamMode(IntEnum):
     POSITION = 0
     IMMEDIATE = 1
+    RELATIVE = 2
 
 class RunState(IntEnum):
     INIT = 0
@@ -77,6 +79,7 @@ class IntcodeComputer():
         Opcode.JUMP_IF_FALSE: 2,
         Opcode.LESS_THAN: 3,
         Opcode.EQUAL: 3,
+        Opcode.ADJUST_BASE: 1,
         Opcode.TERMINATE: 1,
     }
     OPERATION_OF_OPCODE = {}
@@ -84,8 +87,11 @@ class IntcodeComputer():
     def __init__(self, instruction_list, input_list=None):
         self._state = RunState.INIT
 
-        self._memory = np.array(instruction_list)
+        self._memory = np.zeros(2**16, dtype=np.int64)
         self._mem_addr = 0
+        self._memory[:len(instruction_list)] = instruction_list
+
+        self._relative_base = 0
 
         self._input_list = input_list
         self._input_addr = 0
@@ -134,6 +140,8 @@ class IntcodeComputer():
                 already_moved = self._op_less_than(params, param_modes)
             elif opcode == Opcode.EQUAL:
                 already_moved = self._op_equal(params, param_modes)
+            elif opcode == Opcode.ADJUST_BASE:
+                already_moved = self._op_adjust_base(params, param_modes)
             elif opcode == Opcode.TERMINATE:
                 already_moved = self._op_terminate(params, param_modes)
             else:
@@ -151,6 +159,15 @@ class IntcodeComputer():
 
     @classmethod
     def _parse_one_instruction(cls, instr):
+        """Parse the instruction and return the opcode and parameter modes
+
+        opcode stands for operation code and is the 2 right-most digits.
+        parameters for the inputs of that operation is the continuing digits
+        from the above 2, from right to left. E.g. hundreds are for the first
+        parameter, thousands are for the second parameter, ten thousands are
+        for the third, ....
+
+        """
         opcode = Opcode(instr % 100)
         instr //= 100  # get rid of the opcode
         num_param = cls.NUM_PARAMS_OF_OPCODE[opcode]
@@ -163,20 +180,45 @@ class IntcodeComputer():
 
     def _fetch_params(self, raw_params, param_modes, index_of_output_addr=None):
         """Fetch the parameters based on the parameter modes
+
+        raw_params is from the _memory and should not be altered!
+        param_modes is temporary for current process and can be changed.
+
         """
+        output_addr = None
         if index_of_output_addr is not None:
             i = index_of_output_addr
-            assert param_modes[i] == ParamMode.POSITION
-            param_modes[i] = ParamMode.IMMEDIATE # make it IMMEDIATE so we get
-                                                 # the raw value as the addr
+            # Output should use POSITION or RELATIVE modes to indicate the addr
+            # to write to.
+            assert param_modes[i] != ParamMode.IMMEDIATE
+
+            # Compute the parameter RELATIVE mode output
+            p = raw_params[i]
+            if param_modes[i] == ParamMode.POSITION:
+                output_addr = p
+            elif param_modes[i] == ParamMode.RELATIVE:
+                output_addr = self._relative_base + p
+
+            # make it IMMEDIATE so it just appends the parameter to ret
+            param_modes[i] = ParamMode.IMMEDIATE
+
         ret = []
         for p, m in zip(raw_params, param_modes):
             if m == ParamMode.POSITION:
                 ret.append(self._memory[p])
             elif m == ParamMode.IMMEDIATE:
                 ret.append(p)
+            elif m == ParamMode.RELATIVE:
+                addr = self._relative_base + p
+                assert addr >= 0
+                ret.append(self._memory[addr])
             else:
                 raise ValueError()
+
+        # put the output address back
+        if output_addr is not None:
+            ret[index_of_output_addr] = output_addr
+
         return ret
 
 
@@ -240,6 +282,11 @@ class IntcodeComputer():
         i1, i2, save_addr = self._fetch_params(params, param_modes,
                                                index_of_output_addr=2)
         self._memory[save_addr] = 1 if i1 == i2 else 0
+
+
+    def _op_adjust_base(self, params, param_modes):
+        adj, = self._fetch_params(params, param_modes)
+        self._relative_base += adj
 
 
     def _op_terminate(self, params, param_modes):
