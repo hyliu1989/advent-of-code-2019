@@ -61,6 +61,12 @@ class ParamMode(IntEnum):
     POSITION = 0
     IMMEDIATE = 1
 
+class RunState(IntEnum):
+    INIT = 0
+    RUNNING = 1
+    PAUSED = 2
+    FINISHED = 3
+
 class IntcodeComputer():
     NUM_PARAMS_OF_OPCODE = {
         Opcode.ADD: 3,
@@ -76,7 +82,7 @@ class IntcodeComputer():
     OPERATION_OF_OPCODE = {}
 
     def __init__(self, instruction_list, input_list=None):
-        self._has_run = False
+        self._state = RunState.INIT
 
         self._memory = np.array(instruction_list)
         self._mem_addr = 0
@@ -87,13 +93,31 @@ class IntcodeComputer():
         self._output_list = []
 
 
+    @property
+    def state(self):
+        return self._state
+
+    def append_input(self, item):
+        self._input_list.append(item)
+
+    @property
+    def outputs(self):
+        return self._output_list.copy()
+
+
     def run(self):
-        while not self._has_run:
+        # Check it is not terminated
+        assert self._state != RunState.FINISHED
+
+        # Start running
+        self._state = RunState.RUNNING
+        while self._state not in [RunState.FINISHED, RunState.PAUSED]:
             opcode, param_modes = self._parse_one_instruction(
                 self._memory[self._mem_addr]
             )
             num_param = len(param_modes)
             params = self._memory[self._mem_addr+1:self._mem_addr+1+num_param]
+            # Check the opcode and determine which function to call
             if   opcode == Opcode.ADD:
                 already_moved = self._op_add(params, param_modes)
             elif opcode == Opcode.MULTIPLY:
@@ -115,11 +139,14 @@ class IntcodeComputer():
             else:
                 raise ValueError('Unknown opcode %d' % opcode)
 
+            if self._state == RunState.PAUSED:
+                return
+
             # move the memory pointer
             if not already_moved:
                 step = self.NUM_PARAMS_OF_OPCODE[opcode] + 1
                 self._mem_addr += step
-        return self._memory[0], self._output_list.copy()
+        return self._output_list.copy()
 
 
     @classmethod
@@ -166,6 +193,11 @@ class IntcodeComputer():
 
 
     def _op_stdin(self, params, param_modes):
+        # if input_addr is at the end of the list, pause
+        if self._input_addr == len(self._input_list):
+            self._state = RunState.PAUSED
+            return
+
         save_addr, = self._fetch_params(params, param_modes,
                                         index_of_output_addr=0)
         self._memory[save_addr] = self._input_list[self._input_addr]
@@ -211,4 +243,4 @@ class IntcodeComputer():
 
 
     def _op_terminate(self, params, param_modes):
-        self._has_run = True
+        self._state = RunState.FINISHED
