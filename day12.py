@@ -7,6 +7,15 @@ class Moon:
         self.position = np.array([x,y,z], np.int64)
         self.velocity = np.array([0,0,0], np.int64)
 
+    def copy(self):
+        ret = Moon(*self.position)
+        ret.velocity = self.velocity.copy()
+        return ret
+
+    def __repr__(self):
+        return ('\n<class Moon object position=[%d,%d,%d] velocity=[%d,%d,%d]>'
+                % (tuple(self.position) + tuple(self.velocity)))
+
     def interact(self, moon):
         diff = self.position - moon.position
         self.velocity[diff > 0] -= 1
@@ -79,29 +88,47 @@ if sys.argv[1] in ['0', '1']:
     print('energy', energy)
 
 else:
-    def build_state(moon_list):
-        ret = ()
-        for m in moon_list:
-            ret += tuple(m.position) + tuple(m.velocity)
-        return ret
+    # instead of bruteforce looking for it, let's peek the behavior
+    moon_list_for_x = [m.copy() for m in moon_list]
+    moon_list_for_y = [m.copy() for m in moon_list]
+    moon_list_for_z = [m.copy() for m in moon_list]
 
-    state = build_state(moon_list)
-    history = {}
-    history[state] = True
-    step = 0
-    while True:
-        # Proceed to a new state
-        proceed_1(moon_list)
-        step += 1
+    moon_lists = [moon_list_for_x, moon_list_for_y, moon_list_for_z]
+    required_steps = []
 
-        # Check the currently proceeded state
-        state = build_state(moon_list)
-        if history.get(state) is not None:
-            break
-        else:
-            history[state] = True
+    for i in range(3):
+        current_list = moon_lists[i]
+        step = 0
+        history = {}
+        def build_state(moon_list):
+            state = ()
+            for m in moon_list:
+                state += (m.position[i], m.velocity[i])
+            return state
 
-        if step % 1000000 == 0:
-            print('step', step)
+        state = build_state(current_list)
+        history[state] = True
 
-    print(step)
+        while True:
+            # Proceed to a new state
+            proceed_1(current_list)
+            step += 1
+
+            # Check the currently proceeded state
+            state = build_state(current_list)
+            if history.get(state) is not None:
+                break
+            else:
+                history[state] = True
+
+            if step % 100000 == 0:
+                print('step', step)
+        
+        required_steps.append(step)
+
+    import math
+    def lcm(x,y):
+        return x*y//math.gcd(x,y)
+
+    print(required_steps)
+    print(lcm(lcm(required_steps[0], required_steps[1]), required_steps[2]))
