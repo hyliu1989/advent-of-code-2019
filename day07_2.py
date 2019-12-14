@@ -11,7 +11,6 @@ for phase_seq in itertools.permutations(range(5,10)):
     # setup the computer phase
     list_computers = [IntcodeComputer(test_program, input_list=[phase])
                       for phase in phase_seq]
-    index_previous_computer_output = [-1]*5
 
     # start running
     list_computers[0].append_input(0)
@@ -30,11 +29,12 @@ for phase_seq in itertools.permutations(range(5,10)):
                     to_terminate = True
                     assert i == 0
                     break
-                index_previous_computer_output[i] += 1
-                idx_output = index_previous_computer_output[i]
-                curr_computer.append_input(prev_computer.outputs[idx_output])
+                curr_input = prev_computer.get_stdout()
+                assert curr_input is not None
+                curr_computer.append_input(curr_input)
                 curr_computer.run()
-    output = list_computers[4].outputs[-1]
+    output = list_computers[4].get_stdout()
+    assert list_computers[4].get_stdout() is None
     if output > max_output:
         max_output = output
         max_phase_seq = phase_seq

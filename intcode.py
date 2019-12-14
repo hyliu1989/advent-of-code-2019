@@ -93,10 +93,11 @@ class IntcodeComputer():
 
         self._relative_base = 0
 
-        self._input_list = input_list
+        self._input_list = [] if input_list is None else input_list
         self._input_addr = 0
 
         self._output_list = []
+        self._output_addr = 0
 
 
     @property
@@ -106,9 +107,13 @@ class IntcodeComputer():
     def append_input(self, item):
         self._input_list.append(item)
 
-    @property
-    def outputs(self):
-        return self._output_list.copy()
+    def get_stdout(self):
+        if self._output_addr == len(self._output_list):
+            return None
+        else:
+            ret = self._output_list[self._output_addr]
+            self._output_addr += 1
+            return ret
 
 
     def run(self):
