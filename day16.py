@@ -27,12 +27,13 @@ def compute(input_signal, n_phase, output_offset=0):
     return output_signal[output_offset:output_offset+8]
 
 ## New method
+import numba
+@numba.jit(nogil=True)
 def _FFT(x):
     y = np.zeros_like(x)
-    bands_pos = range(1, x.size, 4)
-    bands_neg = range(3, x.size, 4)
-    
-    for band_head in bands_pos:
+
+    # +1 band
+    for band_head in range(1, x.size, 4):
         # initialize for the first output element
         ind_output = 0
         band_sum = x[band_head]
@@ -51,7 +52,8 @@ def _FFT(x):
             stop = new_stop
             y[ind_output] += band_sum
 
-    for band_head in bands_neg:
+    # -1 band
+    for band_head in range(3, x.size, 4):
         # initialize for the first output element
         ind_output = 0
         band_sum = x[band_head]
@@ -102,8 +104,8 @@ if part_id == 1:
     print('time:', t.elapsed)
 
 if part_id == 2:
-    input_signal = np.array([int(s) for s in '03036732577212944063491565474664'])
-    input_signal2 = (input_signal + np.zeros((10000,1))).ravel()
+    # input_signal = np.array([int(s) for s in '03036732577212944063491565474664'])
+    input_signal2 = (input_signal + np.zeros((10000,1), dtype=np.int64)).ravel()
     offset = 0
     for n in input_signal[:7]:
         offset += n
@@ -113,6 +115,8 @@ if part_id == 2:
 
     with contexttimer.Timer() as t:
         for phase in range(100):
+            if (phase+1) % 10 == 0:
+                print(phase)
             input_signal2 = fft(input_signal2)
     print(input_signal2[offset:offset+8])
     print('time:', t.elapsed)
