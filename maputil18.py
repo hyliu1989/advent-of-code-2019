@@ -17,17 +17,18 @@ class Segment:
     center (fewest to most).
 
     """
-    def __init__(self, parent, segment:np.ndarray, children:list, length:int):
+    def __init__(self, parent, segment:np.ndarray, children:list,
+                 ordered_items:list, length:int):
         self.parent = parent
         self.segment = segment
         self.children = children
-        self.ordered_items = []  # (item_id, nth_tile_in_the_segment)
+        self.ordered_items = ordered_items  # (item_id, nth_tile_in_the_segment)
         self.length = length
 
-
+wall = -999
 def parse(c):
     if c == '#':
-        return -999
+        return wall
     if c == '.':
         return 0
     if c == '@':
@@ -48,10 +49,11 @@ with open('day18-input.txt', 'r') as f:
         init_map.append(line)
 init_map = np.array(init_map)
 
+def is_position_valid(pos):
+    return init_map[tuple(pos)] != wall
 
 ## Build segment map and locate items
 segment_map = np.empty(init_map.shape, object)
-wall = -999
 item_positions = {}
 
 def make_segment_recursive(parent, pos, prev_move)-> Segment:
@@ -68,13 +70,13 @@ def make_segment_recursive(parent, pos, prev_move)-> Segment:
         if item != 0:
             item_positions[item] = ij
             collected_items.append((item, nth_tile))
-        trace_heads = explore(pos, prev_move)
+        trace_heads = explore(pos, prev_move, is_position_valid)
         num = len(trace_heads)
         if num == 0:
             # finalize the Segment
             ret = Segment(parent, segment, [], collected_items, nth_tile)
             segment_map[ret.segment!=0] = ret
-            break
+            return ret
         elif num == 1:
             # continue
             pos, prev_move = trace_heads[0]

@@ -39,7 +39,7 @@ def get_new_position(pos:numpy.ndarray, direction:Direction):
         new_pos = pos + [0,1]
     return new_pos
 
-def explore(pos, prev_move):
+def explore(pos, prev_move, is_position_valid):
     dir_to_explore = Direction.all()
     dir_to_explore.remove(get_opposite(prev_move))
     dir_to_explore = np.array(dir_to_explore)
@@ -49,8 +49,7 @@ def explore(pos, prev_move):
     for i in range(3):
         direction = dir_to_explore[i]
         new_pos = get_new_position(pos, direction)
-        valid = init_map[tuple(new_pos)] != wall
-        if valid:
+        if is_position_valid(new_pos):
             trace_heads.append(
                 StepTrace(pos=new_pos, prev_move=direction)
             )
