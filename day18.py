@@ -3,6 +3,16 @@ import numpy as np
 from pylab import imshow, show, figure, pause
 
 class SearchTrace:
+    min_step = np.inf
+    @classmethod
+    def get_min_step(cls):
+        return cls.min_step
+
+    @classmethod
+    def set_min_step(cls, value):
+        if cls.min_step > value:
+            cls.min_step = value
+
     def __init__(self, to_init_search=False):
         self.reachable_keys = set()
         self.blocked_lock_and_segments = []
@@ -87,6 +97,9 @@ class SearchTrace:
         self.collected_keys.add(key)
         self.trace.append(key)
 
+        if self.step > self.get_min_step():
+            return 'abort'
+
         original = self.blocked_lock_and_segments.copy()
         for locked_door, seg in original:
             if locked_door == -key:
@@ -125,21 +138,21 @@ def search_keys_in_seg_and_children_until_blocked(seg, keys, blocked_lock_and_se
 
 if __name__ == '__main__':
     trace_list = []
-    min_step = np.inf
     start_trace = SearchTrace(True)
 
     def dfs(search_trace):
-        global min_step
+        min_step = SearchTrace.get_min_step()
         if len(search_trace.reachable_keys) == 0:
             if min_step > search_trace.step:
-                min_step = search_trace.step
-                print(min_step)
+                SearchTrace.set_min_step(search_trace.step)
+                print(search_trace.step)
                 trace_list.append(search_trace)
             return
 
         for k in search_trace.reachable_keys:
             s = search_trace.copy()
-            s.get_key(k)
-            dfs(s)
+            info = s.get_key(k)
+            if info != 'abort':
+                dfs(s)
 
     dfs(start_trace)
