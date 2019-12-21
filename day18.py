@@ -120,10 +120,12 @@ if __name__ == '__main__':
 
     def dfs(search_trace):
         if len(search_trace.reachable_keys) == 0:
-            trace_list.append(search_trace)
+            trace_list.append(search_trace.step)
             return
 
         for k in search_trace.reachable_keys:
             s = search_trace.copy()
             s.get_key(k)
             dfs(s)
+
+    dfs(start_trace)
