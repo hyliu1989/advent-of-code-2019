@@ -101,7 +101,7 @@ def count_steps_until_entering_the_ancestor(current_seg, ancestor_seg=None):
 
 
 def search_keys_in_seg_and_children_until_blocked(seg, keys, blocked_lock_and_segments, 
-                                                  collected_keys=[]):
+                                                  collected_keys=set()):
     for item, _ in seg.ordered_items:
         if 1 <= item <= 26:
             keys.add(item)
@@ -115,12 +115,18 @@ def search_keys_in_seg_and_children_until_blocked(seg, keys, blocked_lock_and_se
 
 
 if __name__ == '__main__':
+    import numpy as np
     trace_list = []
+    min_step = np.inf
     start_trace = SearchTrace(True)
 
     def dfs(search_trace):
+        global min_step
         if len(search_trace.reachable_keys) == 0:
-            trace_list.append(search_trace.step)
+            if min_step > search_trace.step:
+                min_step = search_trace.step
+                print(min_step)
+                trace_list.append(search_trace)
             return
 
         for k in search_trace.reachable_keys:
