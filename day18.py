@@ -7,6 +7,7 @@ class SearchTrace:
         self.collected_keys = set()
         self.step = 0
         self.head = (40,40)
+        self.trace = []
 
         self._initial_search()
 
@@ -17,6 +18,7 @@ class SearchTrace:
         ret.collected_keys = self.collected_keys.copy()
         ret.step = self.step
         ret.head = self.head
+        ret.trace = self.trace.copy()
         return ret
 
     def _initial_search(self):
@@ -80,6 +82,7 @@ class SearchTrace:
 
         self.reachable_keys.remove(key)
         self.collected_keys.add(key)
+        self.trace.append(key)
         for locked_door, seg in self.blocked_lock_and_segments:
             if locked_door == -key:
                 # the locked door is unlocked!
