@@ -17,11 +17,12 @@ class Segment:
     center (fewest to most).
 
     """
-    def __init__(self, parent, segment:np.ndarray, children:list):
+    def __init__(self, parent, segment:np.ndarray, children:list, length:int):
         self.parent = parent
         self.segment = segment
         self.children = children
         self.ordered_items = []
+        self.length = length
 
 
 def parse(c):
@@ -57,19 +58,21 @@ def make_segment_recursive(parent, pos, prev_move)-> Segment:
     # Segment init required variables
     segment = np.zeros_like(init_map, dtype=np.bool)
     collected_items = []
+    nth_tile = 0
 
     while True:
         ij = tuple(pos)
         segment[ij] = True
         item = init_map[ij]
+        nth_tile += 1
         if item != 0:
             item_positions[item] = ij
-            collected_items.append(item)
+            collected_items.append((item, nth_tile))
         trace_heads = explore(pos, prev_move)
         num = len(trace_heads)
         if num == 0:
             # finalize the Segment
-            ret = Segment(parent, segment, [], collected_items)
+            ret = Segment(parent, segment, [], collected_items, nth_tile)
             segment_map[ret.segment] = ret
             break
         elif num == 1:
@@ -77,7 +80,7 @@ def make_segment_recursive(parent, pos, prev_move)-> Segment:
             pos, prev_move = trace_heads[0]
         elif num >= 2:
             # finalize the Segment and start new searches
-            ret = Segment(parent, segment, [], collected_items)
+            ret = Segment(parent, segment, [], collected_items, nth_tile)
             segment_map[ret.segment] = ret
             for i in range(num):
                 pos, prev_move = trace_heads[i]
