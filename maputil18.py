@@ -21,7 +21,7 @@ class Segment:
         self.parent = parent
         self.segment = segment
         self.children = children
-        self.ordered_items = []
+        self.ordered_items = []  # (item_id, nth_tile_in_the_segment)
         self.length = length
 
 
@@ -56,15 +56,15 @@ item_positions = {}
 
 def make_segment_recursive(parent, pos, prev_move)-> Segment:
     # Segment init required variables
-    segment = np.zeros_like(init_map, dtype=np.bool)
+    segment = np.zeros_like(init_map, dtype=np.uint8)
     collected_items = []
     nth_tile = 0
 
     while True:
-        ij = tuple(pos)
-        segment[ij] = True
-        item = init_map[ij]
         nth_tile += 1
+        ij = tuple(pos)
+        segment[ij] = nth_tile
+        item = init_map[ij]
         if item != 0:
             item_positions[item] = ij
             collected_items.append((item, nth_tile))
@@ -73,7 +73,7 @@ def make_segment_recursive(parent, pos, prev_move)-> Segment:
         if num == 0:
             # finalize the Segment
             ret = Segment(parent, segment, [], collected_items, nth_tile)
-            segment_map[ret.segment] = ret
+            segment_map[ret.segment!=0] = ret
             break
         elif num == 1:
             # continue
@@ -81,7 +81,7 @@ def make_segment_recursive(parent, pos, prev_move)-> Segment:
         elif num >= 2:
             # finalize the Segment and start new searches
             ret = Segment(parent, segment, [], collected_items, nth_tile)
-            segment_map[ret.segment] = ret
+            segment_map[ret.segment!=0] = ret
             for i in range(num):
                 pos, prev_move = trace_heads[i]
                 ret.children.append(
@@ -91,16 +91,39 @@ def make_segment_recursive(parent, pos, prev_move)-> Segment:
 
 
 quadrants = [None] * 4
-quadrants[0] = [make_segment_recursive(None, np.array([39,42]), Direction.EAST),
-                make_segment_recursive(None, np.array([38,41]), Direction.NORTH),]
+quadrants[0] = [make_segment_recursive(0, np.array([39,42]), Direction.EAST),
+                make_segment_recursive(0, np.array([38,41]), Direction.NORTH),]
 
-quadrants[1] = [make_segment_recursive(None, np.array([38,39]), Direction.NORTH),
-                make_segment_recursive(None, np.array([39,38]), Direction.WEST),]
+quadrants[1] = [make_segment_recursive(1, np.array([38,39]), Direction.NORTH),
+                make_segment_recursive(1, np.array([39,38]), Direction.WEST),]
 
-quadrants[2] = [make_segment_recursive(None, np.array([41,38]), Direction.WEST),
-                make_segment_recursive(None, np.array([42,39]), Direction.SOUTH),]
+quadrants[2] = [make_segment_recursive(2, np.array([41,38]), Direction.WEST),
+                make_segment_recursive(2, np.array([42,39]), Direction.SOUTH),]
 
-quadrants[3] = [make_segment_recursive(None, np.array([42,41]), Direction.SOUTH),]
+quadrants[3] = [make_segment_recursive(3, np.array([42,41]), Direction.SOUTH),]
+
+
+def find_common_parent(seg1, seg2):
+    parent_list1 = [seg1]
+    while True:
+        p = parent_list1[-1].parent
+        parent_list1.append(p)
+        if p in range(4):
+            break
+    p = seg2
+    have_common_parent = True
+    while True:
+        if p in parent_list1:
+            break
+        if p in range(4):
+            have_common_parent = False
+            break
+        p = p.parent
+
+    if have_common_parent:
+        return p, None
+    else:
+        return parent_list1[-1], p
 
 
 def find_reachable_keys(curr_map) -> list:

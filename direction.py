@@ -1,6 +1,7 @@
 from enum import IntEnum
 from collections import namedtuple
 import numpy
+import numpy as np
 
 StepTrace = namedtuple('StepTrace', ['pos', 'prev_move'])
 
