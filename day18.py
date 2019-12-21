@@ -1,4 +1,6 @@
 import maputil18 as maputil
+import numpy as np
+from pylab import imshow, show, figure, pause
 
 class SearchTrace:
     def __init__(self, to_init_search=False):
@@ -25,7 +27,8 @@ class SearchTrace:
         for quad in maputil.quadrants:
             for seg in quad:
                 search_keys_in_seg_and_children_until_blocked(
-                    seg, self.reachable_keys, self.blocked_lock_and_segments)
+                    seg, self.reachable_keys, self.blocked_lock_and_segments,
+                    self.collected_keys)
 
     def get_key(self, key):
         assert key in self.reachable_keys
@@ -59,7 +62,7 @@ class SearchTrace:
                 curr_step += count_steps_until_entering_the_ancestor(key_seg)
                 curr_step += key_seg.segment[key_pos]
             else:
-                # head the the key are in the same quadrant
+                # head and the key are in the same quadrant
                 if p1 is key_seg:
                     curr_step += head_seg.segment[self.head] - 1
                     curr_step += count_steps_until_entering_the_ancestor(
@@ -73,9 +76,9 @@ class SearchTrace:
                 else:
                     # p1 is some segment in between or the head of the quadrant
                     curr_step += head_seg.segment[self.head] - 1
-                    curr_step += count_steps_until_entering_the_ancestor(head_seg)
+                    curr_step += count_steps_until_entering_the_ancestor(head_seg, p1)
                     curr_step += 1
-                    curr_step += count_steps_until_entering_the_ancestor(key_seg)
+                    curr_step += count_steps_until_entering_the_ancestor(key_seg, p1)
                     curr_step += key_seg.segment[key_pos]
             self.step += curr_step
         self.head = key_pos
@@ -83,7 +86,9 @@ class SearchTrace:
         self.reachable_keys.remove(key)
         self.collected_keys.add(key)
         self.trace.append(key)
-        for locked_door, seg in self.blocked_lock_and_segments:
+
+        original = self.blocked_lock_and_segments.copy()
+        for locked_door, seg in original:
             if locked_door == -key:
                 # the locked door is unlocked!
                 self.blocked_lock_and_segments.remove((locked_door, seg))
@@ -104,7 +109,7 @@ def count_steps_until_entering_the_ancestor(current_seg, ancestor_seg=None):
 
 
 def search_keys_in_seg_and_children_until_blocked(seg, keys, blocked_lock_and_segments, 
-                                                  collected_keys=set()):
+                                                  collected_keys):
     for item, _ in seg.ordered_items:
         if 1 <= item <= 26:
             keys.add(item)
@@ -114,11 +119,11 @@ def search_keys_in_seg_and_children_until_blocked(seg, keys, blocked_lock_and_se
                 blocked_lock_and_segments.append((item, seg))
                 return
     for s in seg.children:
-        search_keys_in_seg_and_children_until_blocked(s, keys, blocked_lock_and_segments)
+        search_keys_in_seg_and_children_until_blocked(s, keys, blocked_lock_and_segments,
+                                                      collected_keys)
 
 
 if __name__ == '__main__':
-    import numpy as np
     trace_list = []
     min_step = np.inf
     start_trace = SearchTrace(True)

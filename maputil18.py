@@ -1,5 +1,4 @@
 import numpy as np
-from pylab import imshow, show, figure, pause
 import contexttimer
 import sys
 # part_id = int(sys.argv[1])
@@ -126,7 +125,3 @@ def find_common_parent(seg1, seg2):
         return p, None
     else:
         return parent_list1[-1], p
-
-
-def find_reachable_keys(curr_map) -> list:
-    pass
