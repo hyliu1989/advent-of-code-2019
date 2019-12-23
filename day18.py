@@ -35,6 +35,7 @@ class SearchTrace:
 
     def _initial_search(self):
         for quad in maputil.quadrants:
+        # for quad in [maputil.quadrants[1][1:2]]:
             for seg in quad:
                 search_keys_in_seg_and_children_until_blocked(
                     seg, self.reachable_keys, self.blocked_lock_and_segments,
@@ -94,7 +95,7 @@ class SearchTrace:
                             key_seg, ancestor_seg=p1, collected_keys=collected)
                         curr_step += key_seg.segment[key_pos]
         except RuntimeError as e:
-            print(e)
+            # print(e)
             return 'abort'
         self.step += curr_step
         self.head = key_pos
@@ -151,6 +152,7 @@ if __name__ == '__main__':
     start_trace = SearchTrace(True)
 
     def dfs(search_trace):
+        # record only the trace that requires the minimal step
         min_step = SearchTrace.get_min_step()
         if len(search_trace.reachable_keys) == 0:
             if min_step > search_trace.step:
@@ -165,4 +167,51 @@ if __name__ == '__main__':
             if info != 'abort':
                 dfs(s)
 
-    dfs(start_trace)
+    # dfs(start_trace)
+
+    def test():
+        for i in [1, 4, 5, 9, 8, 10, 17, 16, 22, 23, 7, 24, 26, 11, 12, 13]:
+            start_trace.get_key(i)
+            print('blocked', [door for door, _ in start_trace.blocked_lock_and_segments])
+            print('reachable_keys', start_trace.reachable_keys)
+
+    task_queue = []
+
+    def _bfs(search_trace):
+        # record only the trace that requires the minimal step
+        min_step = SearchTrace.get_min_step()
+        # if len(search_trace.reachable_keys) == 0:
+        #     if min_step > search_trace.step:
+        #         SearchTrace.set_min_step(search_trace.step)
+        #         print(search_trace.step)
+        #         trace_list.append(search_trace)
+        #     return
+        for k in search_trace.reachable_keys:
+            s = search_trace.copy()
+            info = s.get_key(k)
+            if info != 'abort':
+                task_queue.append(s)
+
+    def bfs_and_dfs(start_trace):
+        global task_queue
+        n_collected_keys = 0    
+
+        task_queue.append(start_trace)
+        while len(task_queue[:1]) != 0:
+            n_keys_new = len(task_queue[0].collected_keys)
+            if n_collected_keys != n_keys_new:
+                # sort
+                task_queue = sorted(task_queue, key=lambda x: x.step)
+                print(task_queue[0].step, task_queue[1].step)
+            n_collected_keys = n_keys_new
+            
+            if n_keys_new == 5:
+                n_collected_keys = n_keys_new
+                break
+            
+            s = task_queue[0]
+            task_queue = task_queue[1:]
+            _bfs(s)
+
+        for s in task_queue:
+            dfs(s)
