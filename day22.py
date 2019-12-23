@@ -397,9 +397,21 @@ def f(x):
 def f_inv(x):
     return (a_inv*(x-b)) % mod
 
-def start_running():
-    y = 2020
-    for _ in range(rep):
-        y = f_inv(y)
-    return y
+# Checking that the new computation is correct
+for i in np.random.randint(mod, size=100):
+    i = int(i)
+    assert f(i) == single_pass_forward(i, mod)
+
+rep_curr = rep
+c1 = a_inv
+c0 = -b*a_inv
+y = y_pos
+while rep_curr != 0:
+    if rep_curr % 2 == 1:
+        y = (c1*y + c0) % mod
+
+    rep_curr //= 2
+    c0 = (c0*c1 + c0) % mod
+    c1 = (c1*c1) % mod
+
 print('Part 2', y)
