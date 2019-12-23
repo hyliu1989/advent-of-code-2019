@@ -99,22 +99,37 @@ class IntcodeComputer():
         self._output_list = []
         self._output_addr = 0
 
-
     @property
     def state(self):
         return self._state
 
     def append_input(self, item):
-        self._input_list.append(item)
+        self.stdin = item
 
     def get_stdout(self):
+        return self.stdout
+
+    @property
+    def stdin(self):
+        raise RuntimeError('stdin is not readable')
+        return None
+
+    @stdin.setter
+    def stdin(self, x):
+        if hasattr(x, '__iter__'):
+            for xx in x:
+                self._input_list.append(xx)
+        else:
+            self._input_list.append(x)
+
+    @property
+    def stdout(self):
         if self._output_addr == len(self._output_list):
             return None
         else:
             ret = self._output_list[self._output_addr]
             self._output_addr += 1
             return ret
-
 
     def run(self):
         # Check it is not terminated
