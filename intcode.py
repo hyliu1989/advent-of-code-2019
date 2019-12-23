@@ -93,7 +93,7 @@ class IntcodeComputer():
 
         self._relative_base = 0
 
-        self._input_list = [] if input_list is None else input_list
+        self._input_list = [] if input_list is None else [i for i in input_list]
         self._input_addr = 0
 
         self._output_list = []
