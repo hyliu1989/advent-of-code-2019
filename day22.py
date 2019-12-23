@@ -70,28 +70,28 @@ def cut_track1(x_pos, N, mod):
         y_pos = x_pos - n1
     return y_pos
 
-@numba.jit('i8(i8,i8,i8)', nopython=True, nogil=True, fastmath=True)
-def inv_cut_track1(y_pos, N, mod):
-    if N < 0:
-        N = N + mod
-    n1 = N
-    n2 = mod-N
+# @numba.jit('i8(i8,i8,i8)', nopython=True, nogil=True, fastmath=True)
+# def inv_cut_track1(y_pos, N, mod):
+#     if N < 0:
+#         N = N + mod
+#     n1 = N
+#     n2 = mod-N
 
-    if y_pos < n2:
-        x_pos = y_pos + n1
-    else:
-        x_pos = y_pos - n2
-    return x_pos
+#     if y_pos < n2:
+#         x_pos = y_pos + n1
+#     else:
+#         x_pos = y_pos - n2
+#     return x_pos
 ###################################################################
 
 
 ###################################################################
 @numba.jit('i8(i8,i8)', nopython=True, nogil=True, fastmath=True)
-def inv_deal_into_new_deck_track1(y_pos, mod):
+def deal_into_new_deck_track1(y_pos, mod):
     x_pos = mod - 1 - y_pos
     return x_pos
 
-deal_into_new_deck_track1 = inv_deal_into_new_deck_track1
+# inv_deal_into_new_deck_track1 = deal_into_new_deck_track1
 ###################################################################
 
 
@@ -101,16 +101,16 @@ def deal_with_inc(x_pos, N, mod):
     y_pos = (x_pos * N) % mod
     return y_pos
 
-@numba.jit('i8(i8,i8,i8)', nopython=True, nogil=True, fastmath=True)
-def inv_deal_with_inc(y_pos, N, mod):
-    r = mod % N
-    k = 0
-    while True:
-        if (y_pos + k*r) % N == 0:
-            break
-        k += 1
-    x_pos = (y_pos + k * mod) // N
-    return x_pos
+# @numba.jit('i8(i8,i8,i8)', nopython=True, nogil=True, fastmath=True)
+# def inv_deal_with_inc(y_pos, N, mod):
+#     r = mod % N
+#     k = 0
+#     while True:
+#         if (y_pos + k*r) % N == 0:
+#             break
+#         k += 1
+#     x_pos = (y_pos + k * mod) // N
+#     return x_pos
 ###################################################################
 
 
@@ -222,144 +222,184 @@ def single_pass_forward(x_pos, mod):
 
     return x_pos
 
-@numba.jit('i8(i8,i8)', nopython=True, nogil=True, fastmath=True)
-def single_pass_reverse(y_pos, mod):
-    y_pos = inv_cut_track1(y_pos, 3785, mod)
-    y_pos = inv_deal_with_inc(y_pos, 66, mod)
-    y_pos = inv_cut_track1(y_pos, 5342, mod)
-    y_pos = inv_deal_with_inc(y_pos, 44, mod)
-    y_pos = inv_cut_track1(y_pos, 9645, mod)
-    y_pos = inv_deal_with_inc(y_pos, 54, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_deal_with_inc(y_pos, 43, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_deal_with_inc(y_pos, 28, mod)
-    y_pos = inv_cut_track1(y_pos, -8752, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_cut_track1(y_pos, 6462, mod)
-    y_pos = inv_deal_with_inc(y_pos, 46, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_deal_with_inc(y_pos, 31, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_deal_with_inc(y_pos, 40, mod)
-    y_pos = inv_cut_track1(y_pos, -6842, mod)
-    y_pos = inv_deal_with_inc(y_pos, 64, mod)
-    y_pos = inv_cut_track1(y_pos, 6661, mod)
-    y_pos = inv_deal_with_inc(y_pos, 10, mod)
-    y_pos = inv_cut_track1(y_pos, 5450, mod)
-    y_pos = inv_deal_with_inc(y_pos, 45, mod)
-    y_pos = inv_cut_track1(y_pos, 239, mod)
-    y_pos = inv_deal_with_inc(y_pos, 75, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_cut_track1(y_pos, 2903, mod)
-    y_pos = inv_deal_with_inc(y_pos, 36, mod)
-    y_pos = inv_cut_track1(y_pos, 7773, mod)
-    y_pos = inv_deal_with_inc(y_pos, 14, mod)
-    y_pos = inv_cut_track1(y_pos, -2176, mod)
-    y_pos = inv_deal_with_inc(y_pos, 29, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_deal_with_inc(y_pos, 35, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_deal_with_inc(y_pos, 7, mod)
-    y_pos = inv_cut_track1(y_pos, 8414, mod)
-    y_pos = inv_deal_with_inc(y_pos, 66, mod)
-    y_pos = inv_cut_track1(y_pos, -5502, mod)
-    y_pos = inv_deal_with_inc(y_pos, 2, mod)
-    y_pos = inv_cut_track1(y_pos, -2515, mod)
-    y_pos = inv_deal_with_inc(y_pos, 56, mod)
-    y_pos = inv_cut_track1(y_pos, 5898, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_cut_track1(y_pos, -4713, mod)
-    y_pos = inv_deal_with_inc(y_pos, 24, mod)
-    y_pos = inv_cut_track1(y_pos, -4427, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_cut_track1(y_pos, 4292, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_deal_with_inc(y_pos, 64, mod)
-    y_pos = inv_cut_track1(y_pos, 9098, mod)
-    y_pos = inv_deal_with_inc(y_pos, 72, mod)
-    y_pos = inv_cut_track1(y_pos, -2609, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_cut_track1(y_pos, 2847, mod)
-    y_pos = inv_deal_with_inc(y_pos, 41, mod)
-    y_pos = inv_cut_track1(y_pos, -532, mod)
-    y_pos = inv_deal_with_inc(y_pos, 13, mod)
-    y_pos = inv_cut_track1(y_pos, 9942, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_cut_track1(y_pos, -4193, mod)
-    y_pos = inv_deal_with_inc(y_pos, 61, mod)
-    y_pos = inv_cut_track1(y_pos, 2831, mod)
-    y_pos = inv_deal_with_inc(y_pos, 31, mod)
-    y_pos = inv_cut_track1(y_pos, 155, mod)
-    y_pos = inv_deal_with_inc(y_pos, 53, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_deal_with_inc(y_pos, 5, mod)
-    y_pos = inv_cut_track1(y_pos, 2974, mod)
-    y_pos = inv_deal_with_inc(y_pos, 51, mod)
-    y_pos = inv_cut_track1(y_pos, -105, mod)
-    y_pos = inv_deal_with_inc(y_pos, 17, mod)
-    y_pos = inv_cut_track1(y_pos, 8404, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_cut_track1(y_pos, -1292, mod)
-    y_pos = inv_deal_with_inc(y_pos, 24, mod)
-    y_pos = inv_cut_track1(y_pos, 8509, mod)
-    y_pos = inv_deal_with_inc(y_pos, 34, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_cut_track1(y_pos, -5008, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_deal_with_inc(y_pos, 53, mod)
-    y_pos = inv_cut_track1(y_pos, 1336, mod)
-    y_pos = inv_deal_with_inc(y_pos, 66, mod)
-    y_pos = inv_cut_track1(y_pos, 1221, mod)
-    y_pos = inv_deal_with_inc(y_pos, 48, mod)
-    y_pos = inv_cut_track1(y_pos, -3393, mod)
-    y_pos = inv_deal_with_inc(y_pos, 15, mod)
-    y_pos = inv_cut_track1(y_pos, 4219, mod)
-    y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
-    y_pos = inv_deal_with_inc(y_pos, 40, mod)
-    y_pos = inv_cut_track1(y_pos, -2325, mod)
-    y_pos = inv_deal_with_inc(y_pos, 14, mod)
-    y_pos = inv_cut_track1(y_pos, -7039, mod)
-    y_pos = inv_deal_with_inc(y_pos, 12, mod)
-    y_pos = inv_cut_track1(y_pos, -2354, mod)
-    y_pos = inv_deal_with_inc(y_pos, 48, mod)
-    y_pos = inv_cut_track1(y_pos, 9374, mod)
-    return y_pos
+# @numba.jit('i8(i8,i8)', nopython=True, nogil=True, fastmath=True)
+# def single_pass_reverse(y_pos, mod):
+#     y_pos = inv_cut_track1(y_pos, 3785, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 66, mod)
+#     y_pos = inv_cut_track1(y_pos, 5342, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 44, mod)
+#     y_pos = inv_cut_track1(y_pos, 9645, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 54, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 43, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 28, mod)
+#     y_pos = inv_cut_track1(y_pos, -8752, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_cut_track1(y_pos, 6462, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 46, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 31, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 40, mod)
+#     y_pos = inv_cut_track1(y_pos, -6842, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 64, mod)
+#     y_pos = inv_cut_track1(y_pos, 6661, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 10, mod)
+#     y_pos = inv_cut_track1(y_pos, 5450, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 45, mod)
+#     y_pos = inv_cut_track1(y_pos, 239, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 75, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_cut_track1(y_pos, 2903, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 36, mod)
+#     y_pos = inv_cut_track1(y_pos, 7773, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 14, mod)
+#     y_pos = inv_cut_track1(y_pos, -2176, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 29, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 35, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 7, mod)
+#     y_pos = inv_cut_track1(y_pos, 8414, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 66, mod)
+#     y_pos = inv_cut_track1(y_pos, -5502, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 2, mod)
+#     y_pos = inv_cut_track1(y_pos, -2515, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 56, mod)
+#     y_pos = inv_cut_track1(y_pos, 5898, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_cut_track1(y_pos, -4713, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 24, mod)
+#     y_pos = inv_cut_track1(y_pos, -4427, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_cut_track1(y_pos, 4292, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 64, mod)
+#     y_pos = inv_cut_track1(y_pos, 9098, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 72, mod)
+#     y_pos = inv_cut_track1(y_pos, -2609, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_cut_track1(y_pos, 2847, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 41, mod)
+#     y_pos = inv_cut_track1(y_pos, -532, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 13, mod)
+#     y_pos = inv_cut_track1(y_pos, 9942, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_cut_track1(y_pos, -4193, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 61, mod)
+#     y_pos = inv_cut_track1(y_pos, 2831, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 31, mod)
+#     y_pos = inv_cut_track1(y_pos, 155, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 53, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 5, mod)
+#     y_pos = inv_cut_track1(y_pos, 2974, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 51, mod)
+#     y_pos = inv_cut_track1(y_pos, -105, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 17, mod)
+#     y_pos = inv_cut_track1(y_pos, 8404, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_cut_track1(y_pos, -1292, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 24, mod)
+#     y_pos = inv_cut_track1(y_pos, 8509, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 34, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_cut_track1(y_pos, -5008, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 53, mod)
+#     y_pos = inv_cut_track1(y_pos, 1336, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 66, mod)
+#     y_pos = inv_cut_track1(y_pos, 1221, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 48, mod)
+#     y_pos = inv_cut_track1(y_pos, -3393, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 15, mod)
+#     y_pos = inv_cut_track1(y_pos, 4219, mod)
+#     y_pos = inv_deal_into_new_deck_track1(y_pos, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 40, mod)
+#     y_pos = inv_cut_track1(y_pos, -2325, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 14, mod)
+#     y_pos = inv_cut_track1(y_pos, -7039, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 12, mod)
+#     y_pos = inv_cut_track1(y_pos, -2354, mod)
+#     y_pos = inv_deal_with_inc(y_pos, 48, mod)
+#     y_pos = inv_cut_track1(y_pos, 9374, mod)
+#     return y_pos
 
 mod = 119315717514047
+
 y_pos = 2020
+rep = 101741582076661
 
-@numba.jit('i8(i8)', nopython=True, nogil=True, fastmath=True)
-def run(y_pos):
-    mod = 119315717514047
-    for i in range(101741582076661):
-        y_pos = single_pass_reverse(y_pos, mod)
-    return y_pos
+# @numba.jit('i8(i8)', nopython=True, nogil=True, fastmath=True)
+# def run(y_pos):
+#     mod = 119315717514047
+#     for i in range(101741582076661):
+#         y_pos = single_pass_reverse(y_pos, mod)
+#     return y_pos
 
-# 17574135437386 = (119315717514047-101741582076661)
-@numba.jit('i8(i8)', nopython=True, nogil=True, fastmath=True)
-def run2(y_pos):
-    mod = 119315717514047
-    for i in range(17574135437386):
-        y_pos = single_pass_forward(y_pos, mod)
-    return y_pos
+# # 17574135437386 = (119315717514047-101741582076661)
+# @numba.jit('i8(i8)', nopython=True, nogil=True, fastmath=True)
+# def run2(y_pos):
+#     mod = 119315717514047
+#     for i in range(17574135437386):
+#         y_pos = single_pass_forward(y_pos, mod)
+#     return y_pos
 
-@numba.jit('i8(i8)', nopython=True, nogil=True, fastmath=True)
-def find_rep(y_pos):
-    mod = 119315717514047
-    origin = y_pos
-    for i in range(101741582076661):
-        y_pos = single_pass_forward(y_pos, mod)
-        if y_pos == origin:
-            break
-    return i+1
+# @numba.jit('i8(i8)', nopython=True, nogil=True, fastmath=True)
+# def find_rep(y_pos):
+#     mod = 119315717514047
+#     origin = y_pos
+#     for i in range(101741582076661):
+#         y_pos = single_pass_forward(y_pos, mod)
+#         if y_pos == origin:
+#             break
+#     return i+1
 
 
-@numba.jit('i8(i8,i8)', nopython=True, nogil=True, fastmath=True)
-def find_rep_small(y_pos, mod):
-    origin = y_pos
-    for i in range(mod):
-        y_pos = single_pass_forward(y_pos, mod)
-        if y_pos == origin:
-            break
-    return i+1
+# @numba.jit('i8(i8,i8)', nopython=True, nogil=True, fastmath=True)
+# def find_rep_small(y_pos, mod):
+#     origin = y_pos
+#     for i in range(mod):
+#         y_pos = single_pass_forward(y_pos, mod)
+#         if y_pos == origin:
+#             break
+#     return i+1
+
+
+# With the hint from https://www.reddit.com/r/adventofcode/comments/ee0rqi/2019_day_22_solutions/fbt5yuy/
+def egcd(a, b):
+    """returns x,y,g such that a*x + b*y = g = gcd(a,b)
+
+    https://stackoverflow.com/questions/4798654/modular-multiplicative-inverse-function-in-python
+
+    """
+    if a == 0:
+        return (b, 0, 1)
+    else:
+        g, y, x = egcd(b % a, a)
+        return (g, x - (b // a) * y, y)
+
+def modinv(a, m):
+    g, x, y = egcd(a, m)
+    if g != 1:
+        raise Exception('modular inverse does not exist')
+    else:
+        return x % m
+
+b = single_pass_forward(0, mod)
+a = (single_pass_forward(1, mod) - b) % mod
+a_inv = modinv(a,mod)
+
+def f(x):
+    return (a*x+b) % mod
+
+def f_inv(x):
+    return (a_inv*(x-b)) % mod
+
+def start_running():
+    y = 2020
+    for _ in range(rep):
+        y = f_inv(y)
+    return y
+print('Part 2', y)
