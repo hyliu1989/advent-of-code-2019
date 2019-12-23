@@ -108,10 +108,10 @@ class SearchTrace:
             return 'abort'
 
         original = self.blocked_lock_and_segments.copy()
-        for locked_door, seg in original:
-            if locked_door == -key:
+        for item, seg in original:
+            if abs(item) == key:  # check for both key and door
                 # the locked door is unlocked!
-                self.blocked_lock_and_segments.remove((locked_door, seg))
+                self.blocked_lock_and_segments.remove((item, seg))
                 search_keys_in_seg_and_children_until_blocked(
                     seg, self.reachable_keys, self.blocked_lock_and_segments,
                     self.collected_keys)
@@ -124,26 +124,36 @@ def count_steps_until_entering_the_ancestor(current_seg, *, ancestor_seg=None,
     while True:
         if p == ancestor_seg or p in range(4):
             break
-        for item, _ in p.ordered_items:
-            if 1 <= item <= 26 and item not in collected_keys:
-                raise RuntimeError("an uncollected key '%c' is in the way of moving!" % chr(item-1+ord('a')))
+        # for item, _ in p.ordered_items:
+        #     if 1 <= item <= 26 and item not in collected_keys:
+        #         raise RuntimeError("an uncollected key '%c' is in the way of moving!" % chr(item-1+ord('a')))
         step += p.length
         p = p.parent
     return step
 
 
-def search_keys_in_seg_and_children_until_blocked(seg, keys, blocked_lock_and_segments, 
+def search_keys_in_seg_and_children_until_blocked(seg, reachable_keys, blocked_lock_and_segments,
                                                   collected_keys):
     for item, _ in seg.ordered_items:
+        stopped = False
         if 1 <= item <= 26:
-            keys.add(item)
+            if item in reachable_keys:
+                pass
+            else:
+                reachable_keys.add(item)
+                stopped = True
         elif -26 <= item <= -1:
-            if -item not in collected_keys:
+            if -item in collected_keys:
+                pass
+            else:
                 # blocked by the door
-                blocked_lock_and_segments.append((item, seg))
-                return
+                stopped = True
+        if stopped:
+            blocked_lock_and_segments.append((item, seg))
+            return
+
     for s in seg.children:
-        search_keys_in_seg_and_children_until_blocked(s, keys, blocked_lock_and_segments,
+        search_keys_in_seg_and_children_until_blocked(s, reachable_keys, blocked_lock_and_segments,
                                                       collected_keys)
 
 
