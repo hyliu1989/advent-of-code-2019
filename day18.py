@@ -56,44 +56,44 @@ class SearchTrace:
                         curr_step += nth_tile
                         break
 
-                curr_step += count_steps_until_entering_the_ancestor(key_seg, collected_keys=self.collected_keys)
+                curr_step += key_seg.n_steps_to_before_quadrant_head
+                assert (count_steps_until_entering_the_ancestor(key_seg)
+                        == key_seg.n_steps_to_before_quadrant_head)
                 curr_step += 2
             else:
                 head_seg = maputil.segment_map[self.head]
-                p1, p2 = maputil.find_common_parent(head_seg, key_seg)
-                collected = self.collected_keys
-                if p2 is not None:
-                    assert p1 in range(4)
-                    assert p2 in range(4)
+                if head_seg.quadrant != key_seg.quadrant:
                     # head and the key are in different quadrants
                     curr_step += head_seg.segment[self.head]-1
-                    curr_step += count_steps_until_entering_the_ancestor(head_seg, collected_keys=collected)
-                    if (p1,p2) in [(0,2), (2,0), (1,3), (3,1)]:
+                    curr_step += head_seg.n_steps_to_before_quadrant_head
+                    if (head_seg.quadrant, key_seg.quadrant) in [(0,2), (2,0), (1,3), (3,1)]:
                         curr_step += 5
                     else:
                         curr_step += 3
-                    curr_step += count_steps_until_entering_the_ancestor(key_seg, collected_keys=collected)
+                    curr_step += key_seg.n_steps_to_before_quadrant_head
                     curr_step += key_seg.segment[key_pos]
                 else:
+                    p1, p2 = maputil.find_common_parent(head_seg, key_seg)
+                    assert p2 is None
                     # head and the key are in the same quadrant
                     if p1 is key_seg:
                         curr_step += head_seg.segment[self.head] - 1
                         curr_step += count_steps_until_entering_the_ancestor(
-                            head_seg, ancestor_seg=key_seg, collected_keys=collected)
+                            head_seg, ancestor_seg=key_seg)
                         curr_step += key_seg.length - key_seg.segment[key_pos] + 1
                     elif p1 is head_seg:
                         curr_step += head_seg.length - head_seg.segment[self.head]
                         curr_step += count_steps_until_entering_the_ancestor(
-                            key_seg, ancestor_seg=head_seg, collected_keys=collected)
+                            key_seg, ancestor_seg=head_seg)
                         curr_step += key_seg.segment[key_pos]
                     else:
                         # p1 is some segment in between or the head of the quadrant
                         curr_step += head_seg.segment[self.head] - 1
                         curr_step += count_steps_until_entering_the_ancestor(
-                            head_seg, ancestor_seg=p1, collected_keys=collected)
+                            head_seg, ancestor_seg=p1)
                         curr_step += 1
                         curr_step += count_steps_until_entering_the_ancestor(
-                            key_seg, ancestor_seg=p1, collected_keys=collected)
+                            key_seg, ancestor_seg=p1)
                         curr_step += key_seg.segment[key_pos]
         except RuntimeError as e:
             # print(e)
@@ -118,16 +118,12 @@ class SearchTrace:
                     self.collected_keys)
 
 
-def count_steps_until_entering_the_ancestor(current_seg, *, ancestor_seg=None,
-                                            collected_keys=set()):
+def count_steps_until_entering_the_ancestor(current_seg, *, ancestor_seg=None):
     step = 0
     p = current_seg.parent
     while True:
         if p == ancestor_seg or p in range(4):
             break
-        # for item, _ in p.ordered_items:
-        #     if 1 <= item <= 26 and item not in collected_keys:
-        #         raise RuntimeError("an uncollected key '%c' is in the way of moving!" % chr(item-1+ord('a')))
         step += p.length
         p = p.parent
     return step

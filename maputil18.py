@@ -17,12 +17,19 @@ class Segment:
 
     """
     def __init__(self, parent, segment:np.ndarray, children:list,
-                 ordered_items:list, length:int):
+                 ordered_items:list, length:int, quadrant:int):
         self.parent = parent
         self.segment = segment
         self.children = children
         self.ordered_items = ordered_items  # (item_id, nth_tile_in_the_segment)
         self.length = length
+        self.quadrant = quadrant
+        if parent in range(4):
+            self.n_steps_to_before_quadrant_head = 0
+        else:
+            self.n_steps_to_before_quadrant_head = (
+                parent.n_steps_to_before_quadrant_head + parent.length
+            )
 
 wall = -999
 def parse(c):
@@ -55,7 +62,7 @@ def is_position_valid(pos):
 segment_map = np.empty(init_map.shape, object)
 item_positions = {}
 
-def make_segment_recursive(parent, pos, prev_move)-> Segment:
+def make_segment_recursive(parent, pos, prev_move, quadrant)-> Segment:
     # Segment init required variables
     segment = np.zeros_like(init_map, dtype=np.uint8)
     collected_items = []
@@ -73,7 +80,7 @@ def make_segment_recursive(parent, pos, prev_move)-> Segment:
         num = len(trace_heads)
         if num == 0:
             # finalize the Segment
-            ret = Segment(parent, segment, [], collected_items, nth_tile)
+            ret = Segment(parent, segment, [], collected_items, nth_tile, quadrant)
             segment_map[ret.segment!=0] = ret
             return ret
         elif num == 1:
@@ -81,27 +88,27 @@ def make_segment_recursive(parent, pos, prev_move)-> Segment:
             pos, prev_move = trace_heads[0]
         elif num >= 2:
             # finalize the Segment and start new searches
-            ret = Segment(parent, segment, [], collected_items, nth_tile)
+            ret = Segment(parent, segment, [], collected_items, nth_tile, quadrant)
             segment_map[ret.segment!=0] = ret
             for i in range(num):
                 pos, prev_move = trace_heads[i]
                 ret.children.append(
-                    make_segment_recursive(ret, pos, prev_move)
+                    make_segment_recursive(ret, pos, prev_move, quadrant)
                 )
             return ret
 
 
 quadrants = [None] * 4
-quadrants[0] = [make_segment_recursive(0, np.array([39,42]), Direction.EAST),
-                make_segment_recursive(0, np.array([38,41]), Direction.NORTH),]
+quadrants[0] = [make_segment_recursive(0, np.array([39,42]), Direction.EAST,  0),
+                make_segment_recursive(0, np.array([38,41]), Direction.NORTH, 0),]
 
-quadrants[1] = [make_segment_recursive(1, np.array([38,39]), Direction.NORTH),
-                make_segment_recursive(1, np.array([39,38]), Direction.WEST),]
+quadrants[1] = [make_segment_recursive(1, np.array([38,39]), Direction.NORTH, 1),
+                make_segment_recursive(1, np.array([39,38]), Direction.WEST,  1),]
 
-quadrants[2] = [make_segment_recursive(2, np.array([41,38]), Direction.WEST),
-                make_segment_recursive(2, np.array([42,39]), Direction.SOUTH),]
+quadrants[2] = [make_segment_recursive(2, np.array([41,38]), Direction.WEST,  2),
+                make_segment_recursive(2, np.array([42,39]), Direction.SOUTH, 2),]
 
-quadrants[3] = [make_segment_recursive(3, np.array([42,41]), Direction.SOUTH),]
+quadrants[3] = [make_segment_recursive(3, np.array([42,41]), Direction.SOUTH, 3),]
 
 
 def find_common_parent(seg1, seg2):
