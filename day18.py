@@ -21,7 +21,8 @@ class SearchTrace:
         self.head = (40,40)
         self.trace = []
 
-        self._initial_search()
+        if to_init_search:
+            self._initial_search()
 
     def copy(self):
         ret = SearchTrace()
@@ -136,8 +137,8 @@ def search_keys_in_seg_and_children_until_blocked(seg, reachable_keys, blocked_l
                                                   collected_keys):
     for item, _ in seg.ordered_items:
         stopped = False
-        if 1 <= item <= 26:
-            if item in reachable_keys:
+        if 1 <= item <= 26:  # key
+            if item in collected_keys:
                 pass
             else:
                 reachable_keys.add(item)
