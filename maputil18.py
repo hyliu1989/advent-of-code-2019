@@ -176,3 +176,70 @@ def find_common_parent(seg1, seg2):
         return p, None
     else:
         return parent_list1[-1], p
+
+
+def count_steps_until_entering_the_ancestor(current_seg, *, ancestor_seg=None):
+    step = 0
+    p = current_seg.parent
+    while True:
+        if p == ancestor_seg or p in range(4):
+            break
+        step += p.length
+        p = p.parent
+    return step
+
+
+def move(current, destination):
+    """Return the number of steps of this move
+
+    current:  (i,j)-index of current position
+    destination:  (i,j)-index of the destination
+    """
+    # count the step to move to where the key is
+    dest_seg = segment_map[destination]
+
+    steps = 0
+
+    if current == (40,40):
+        steps += dest_seg.segment[destination]
+        steps += dest_seg.n_steps_to_before_quadrant_head
+        assert (count_steps_until_entering_the_ancestor(dest_seg)
+                == dest_seg.n_steps_to_before_quadrant_head)
+        steps += 2
+    else:
+        head_seg = segment_map[current]
+        if head_seg.quadrant != dest_seg.quadrant:
+            # head and the key are in different quadrants
+            steps += head_seg.segment[current]-1
+            steps += head_seg.n_steps_to_before_quadrant_head
+            if (head_seg.quadrant, dest_seg.quadrant) in [(0,2), (2,0), (1,3), (3,1)]:
+                steps += 5
+            else:
+                steps += 3
+            steps += dest_seg.n_steps_to_before_quadrant_head
+            steps += dest_seg.segment[destination]
+        else:
+            p1, p2 = find_common_parent(head_seg, dest_seg)
+            assert p2 is None
+            # head and the key are in the same quadrant
+            if p1 is dest_seg:
+                steps += head_seg.segment[current] - 1
+                steps += count_steps_until_entering_the_ancestor(
+                    head_seg, ancestor_seg=dest_seg)
+                steps += dest_seg.length - dest_seg.segment[destination] + 1
+            elif p1 is head_seg:
+                steps += head_seg.length - head_seg.segment[current]
+                steps += count_steps_until_entering_the_ancestor(
+                    dest_seg, ancestor_seg=head_seg)
+                steps += dest_seg.segment[destination]
+            else:
+                # p1 is some segment in between or the head of the quadrant
+                steps += head_seg.segment[current] - 1
+                steps += count_steps_until_entering_the_ancestor(
+                    head_seg, ancestor_seg=p1)
+                steps += 1
+                steps += count_steps_until_entering_the_ancestor(
+                    dest_seg, ancestor_seg=p1)
+                steps += dest_seg.segment[destination]
+
+    return steps
