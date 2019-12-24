@@ -186,7 +186,7 @@ if __name__ == '__main__':
             print('blocked', [door for door, _ in start_trace.blocked_lock_and_segments])
             print('reachable_keys', start_trace.reachable_keys)
 
-    task_queue = []
+    task_list = []
 
     def _bfs(search_trace):
         # record only the trace that requires the minimal step
@@ -201,28 +201,31 @@ if __name__ == '__main__':
             s = search_trace.copy()
             info = s.get_key(k)
             if info != 'abort':
-                task_queue.append(s)
+                task_list.append(s)
 
     def bfs_and_dfs(start_trace):
-        global task_queue
+        global task_list
         n_collected_keys = 0    
 
-        task_queue.append(start_trace)
-        while len(task_queue[:1]) != 0:
-            n_keys_new = len(task_queue[0].collected_keys)
+        task_list.append(start_trace)
+        while len(task_list[:1]) != 0:
+            n_keys_new = len(task_list[0].collected_keys)
             if n_collected_keys != n_keys_new:
                 # sort
-                task_queue = sorted(task_queue, key=lambda x: x.step)
-                print(task_queue[0].step, task_queue[1].step)
+                print('task_list[0:2] steps (before sort)', task_list[0].step, task_list[1].step)
+                task_list = sorted(task_list, key=lambda x: x.step)
+                print('task_list[0:2] steps (after sort) ', task_list[0].step, task_list[1].step)
+                print('len(list)', len(task_list))
+                print('='*40)
             n_collected_keys = n_keys_new
             
-            if n_keys_new == 5:
+            if n_keys_new == 7:
                 n_collected_keys = n_keys_new
                 break
             
-            s = task_queue[0]
-            task_queue = task_queue[1:]
+            s = task_list[0]
+            task_list = task_list[1:]
             _bfs(s)
 
-        for s in task_queue:
+        for s in task_list:
             dfs(s)
