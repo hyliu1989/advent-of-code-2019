@@ -201,7 +201,7 @@ if __name__ == '__main__':
 
     def bfs_and_dfs(start_trace):
         global task_list
-        n_collected_keys = 0    
+        n_collected_keys = 0
 
         task_list.append(start_trace)
         while len(task_list[:1]) != 0:
@@ -214,11 +214,11 @@ if __name__ == '__main__':
                 print('len(list)', len(task_list))
                 print('='*40)
             n_collected_keys = n_keys_new
-            
+
             if n_keys_new == 7:
                 n_collected_keys = n_keys_new
                 break
-            
+
             s = task_list[0]
             task_list = task_list[1:]
             _bfs(s)
