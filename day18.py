@@ -63,7 +63,7 @@ class SearchTrace:
 
         # Check the removed blockers
         idx_blocker = 0
-        for idx_blocker in range(self.blockers.size):
+        while idx_blocker < self.blockers.size:
             # get the iterate of the blocker
             item = self.blockers[idx_blocker]
             if item == 0:
@@ -78,9 +78,12 @@ class SearchTrace:
                 search_keys_in_seg_and_children_until_blocked(
                     seg, self.reachable_keys, self.blockers,
                     self.collected_keys)
+                idx_blocker += 0
+            else:
+                idx_blocker += 1
 
 
-@numba.jit(nopython=True, nogil=True)
+@numba.autojit(nopython=True, nogil=True)
 def search_keys_in_seg_and_children_until_blocked(
     seg, reachable_keys, blockers, collected_keys,
     db_ordered_item=maputil.segment_db['ordered_items'],
@@ -198,4 +201,3 @@ if __name__ == '__main__':
         for s in task_list:
             dfs(s)
 
-# TODO: The value does not match the previous run!!!
