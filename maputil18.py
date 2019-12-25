@@ -6,44 +6,30 @@ part_id = 0
 
 # from intcode import IntcodeComputer, RunState
 from direction import Direction, get_opposite, get_new_position, explore
-from collections import namedtuple
 
-# class Segment:
-#     """Singly-connected segment
+class Segment:
+    """Singly-connected segment
 
-#     A Segment does not have branches or forks. A Segment's head is inside
-#     the singly-connected segment while its inclusive tail can be the joint of
-#     a fork. Its ordered items are ordered according to the step to the maze
-#     center (fewest to most).
+    A Segment does not have branches or forks. A Segment's head is inside
+    the singly-connected segment while its inclusive tail can be the joint of
+    a fork. Its ordered items are ordered according to the step to the maze
+    center (fewest to most).
 
-#     """
-#     def __init__(self, parent, segment:np.ndarray, children:list,
-#                  ordered_items:list, length:int, quadrant:int):
-#         self.parent = parent
-#         self.segment = segment
-#         self.children = children
-#         self.ordered_items = ordered_items  # (item_id, nth_tile_in_the_segment)
-#         self.length = length
-#         self.quadrant = quadrant
-#         if parent in range(4):
-#             self.n_steps_to_before_quadrant_head = 0
-#         else:
-#             self.n_steps_to_before_quadrant_head = (
-#                 parent.n_steps_to_before_quadrant_head + parent.length
-#             )
-Segment = namedtuple('Segment', ['parent', 'segment', 'children', 'ordered_items', 'length', 'quadrant',
-                                 'n_steps_to_before_quadrant_head'])
-def _make_Segment(parent, segment:np.ndarray, children:list,
+    """
+    def __init__(self, parent, segment:np.ndarray, children:list,
                  ordered_items:list, length:int, quadrant:int):
-    if parent in range(4):
-        n_steps_to_before_quadrant_head = 0
-    else:
-        n_steps_to_before_quadrant_head = (
-            parent.n_steps_to_before_quadrant_head + parent.length
-        )
-    return Segment(parent, segment, children, ordered_items, length, quadrant,
-                   n_steps_to_before_quadrant_head)
-
+        self.parent = parent
+        self.segment = segment
+        self.children = children
+        self.ordered_items = ordered_items  # (item_id, nth_tile_in_the_segment)
+        self.length = length
+        self.quadrant = quadrant
+        if parent in range(4):
+            self.n_steps_to_before_quadrant_head = 0
+        else:
+            self.n_steps_to_before_quadrant_head = (
+                parent.n_steps_to_before_quadrant_head + parent.length
+            )
 
 wall = -999
 def parse(c):
@@ -76,12 +62,6 @@ def _is_position_valid(pos):
 segment_map = np.empty(init_map.shape, object)
 item_positions = {}
 
-def _register_seg_map(segment_map_selection, segment):
-    for i in range(segment_map_selection.shape[0]):
-        for j in range(segment_map_selection.shape[1]):
-            if segment_map_selection[i,j]:
-                segment_map[i,j] = segment
-
 def _make_segment_recursive(parent, pos, prev_move, quadrant)-> Segment:
     # Segment init required variables
     segment = np.zeros_like(init_map, dtype=np.uint8)
@@ -100,16 +80,16 @@ def _make_segment_recursive(parent, pos, prev_move, quadrant)-> Segment:
         num = len(trace_heads)
         if num == 0:
             # finalize the Segment
-            ret = _make_Segment(parent, segment, [], collected_items, nth_tile, quadrant)
-            _register_seg_map(segment_map_selection=ret.segment!=0, segment=ret)
+            ret = Segment(parent, segment, [], collected_items, nth_tile, quadrant)
+            segment_map[ret.segment!=0] = ret
             return ret
         elif num == 1:
             # continue
             pos, prev_move = trace_heads[0]
         elif num >= 2:
             # finalize the Segment and start new searches
-            ret = _make_Segment(parent, segment, [], collected_items, nth_tile, quadrant)
-            _register_seg_map(segment_map_selection=ret.segment!=0, segment=ret)
+            ret = Segment(parent, segment, [], collected_items, nth_tile, quadrant)
+            segment_map[ret.segment!=0] = ret
             for i in range(num):
                 pos, prev_move = trace_heads[i]
                 ret.children.append(
