@@ -272,15 +272,14 @@ def move(current, destination):
             steps += segment_db['n_steps_to_before_quadrant_head'][dest_seg]
             steps += step_from_parent_map[destination]
         else:
-            p1, p2 = _find_common_parent(head_seg, dest_seg)
-            assert p2 is None
+            p1 = _find_common_parent(head_seg, dest_seg)
             # head and the key are in the same quadrant
-            if p1 is dest_seg:
+            if p1 == dest_seg:
                 steps += step_from_parent_map[current] - 1
                 steps += count_steps_until_entering_the_ancestor(
                     head_seg, ancestor_seg=dest_seg)
                 steps += segment_db['length'][dest_seg] - step_from_parent_map[destination] + 1
-            elif p1 is head_seg:
+            elif p1 == head_seg:
                 steps += segment_db['length'][head_seg] - step_from_parent_map[current]
                 steps += count_steps_until_entering_the_ancestor(
                     dest_seg, ancestor_seg=head_seg)

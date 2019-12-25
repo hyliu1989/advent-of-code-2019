@@ -63,8 +63,12 @@ class SearchTrace:
 
         # Check the removed blockers
         idx_blocker = 0
-        while True:
+        for idx_blocker in range(self.blockers.size):
+            # get the iterate of the blocker
             item = self.blockers[idx_blocker]
+            if item == 0:
+                break
+
             blocker_pos = maputil.item_positions[item]
             seg = maputil.segment_map[blocker_pos]
             if abs(item) == obtained_key:  # this checks for both key and door. If True, unlock the blocker.
@@ -106,7 +110,7 @@ def search_keys_in_seg_and_children_until_blocked(
                 stopped = True
         # return if stopped
         if stopped:
-            for idx_blocker in range(blockers.shape[0]):
+            for idx_blocker in range(blockers.size):
                 if blockers[idx_blocker] == 0:
                     break
             blockers[idx_blocker] = item
@@ -189,7 +193,6 @@ if __name__ == '__main__':
 
             s = task_list[0]
             task_list = task_list[1:]
-            print('_bfs')
             _bfs(s)
 
         for s in task_list:
