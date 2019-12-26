@@ -1,6 +1,7 @@
 import numpy as np
 import contexttimer
 import sys
+import numba
 # part_id = int(sys.argv[1])
 part_id = 0
 
@@ -42,66 +43,72 @@ a fork. Its ordered items are ordered according to the step to the maze
 center (fewest to most).
 
 """
-segment_map = np.zeros(init_map.shape, np.int64)
-step_from_parent_map = np.zeros(init_map.shape, np.int64)
+map_segment = np.zeros(init_map.shape, np.int64)
+map_steps_from_parent = np.zeros(init_map.shape, np.int64)
 
-n_segments = 6400
-n_item_max = 16
-n_child_max = 3
-segment_db = dict(
-    serial =        -1 * np.ones((n_segments,),    np.int64), 
-    parent =        -1 * np.ones((n_segments,),    np.int64),
-    children =      -1 * np.ones((n_segments, n_child_max), np.int64),
-    ordered_items = np.zeros((n_segments, n_item_max), np.int64),
-    length =        -1 * np.ones((n_segments,),    np.int64),
-    quadrant =      -1 * np.ones((n_segments,),    np.int64),
-    n_steps_to_before_quadrant_head = -1 * np.ones((n_segments,), np.int64),
-)
+n_segments_max = 512
+n_items_max = 16
+n_children_max = 3
+db = - np.ones((n_segments_max, 5+n_children_max+n_items_max), np.int64)
+
+ind_id = 0
+ind_parent = 1
+ind_iter_children = 2
+ind_iter_items = 5  # items are in order
+ind_length = 21
+ind_quadrant = 22
+ind_steps = 23  # steps to before quadrant head
+db[:, ind_iter_items:ind_iter_items+n_items_max] = 0
+
+db_ordered_item = db[:, ind_iter_items:   ind_iter_items   +n_items_max   ]
+db_children     = db[:, ind_iter_children:ind_iter_children+n_children_max]
+
+
 serial_to_assign = 0
 def _make_segment(parent, step_from_parent_map_local:np.ndarray, children:list,
                   ordered_items:list, length:int, quadrant:int) -> int:
-    global serial_to_assign, segment_map, step_from_parent_map
-    ind = serial_to_assign
-    segment_db['serial'][ind] = ind
-    segment_db['parent'][ind] = parent
+    global serial_to_assign, map_segment, map_steps_from_parent
+    segment_id = serial_to_assign
+    row = segment_id
+    db[row, ind_id] = segment_id
+    db[row, ind_parent] = parent
     for i,c in enumerate(children):
-        segment_db['children'][ind,i] = c
+        db[row, ind_iter_children+i] = c
     for i,item in enumerate(ordered_items):
-        segment_db['ordered_items'][ind,i] = item
-    segment_db['length'][ind] = length
-    segment_db['quadrant'][ind] = quadrant
+        db[row, ind_iter_items+i] = item
+    db[row, ind_length] = length
+    db[row, ind_quadrant] = quadrant
     if parent == -1:
-        segment_db['n_steps_to_before_quadrant_head'][ind] = 0
+        db[row, ind_steps] = 0
     else:
-        segment_db['n_steps_to_before_quadrant_head'][ind] = (
-            segment_db['n_steps_to_before_quadrant_head'][parent] + segment_db['length'][parent]
-        )
+        db[row, ind_steps] = db[parent, ind_steps] + db[parent, ind_length]
 
     serial_to_assign += 1
     logic = (step_from_parent_map_local!=0)
-    segment_map[logic] = ind
-    step_from_parent_map[logic] = step_from_parent_map_local[logic]
+    map_segment[logic] = segment_id
+    assert np.all(map_steps_from_parent[logic] == 0)
+    map_steps_from_parent[logic] = step_from_parent_map_local[logic]
 
-    return ind
+    return segment_id
 
-def _append_child(serial, child_serial):
+def _append_child(segment_id, child_id):
     # find the unassigned spot
-    for i in range(n_child_max):
-        if segment_db['children'][serial][i] == -1:
+    for i in range(n_children_max):
+        if db[segment_id, ind_iter_children+i] == -1:
             break
-    segment_db['children'][serial][i] = child_serial
+    db[segment_id, ind_iter_children+i] = child_id
 
-def _remove_child(serial, child_serial):
+def _remove_child(segment_id, child_id):
     # find the child
-    for child_ind in range(n_child_max):
-        if segment_db['children'][serial][child_ind] == child_serial:
+    for child_ind in range(n_children_max):
+        if db[segment_id, ind_iter_children+child_ind] == child_id:
             break
 
-    for i in range(child_ind, n_child_max):
-        if i == n_child_max-1:
-            segment_db['children'][serial][i] = -1
+    for i in range(child_ind, n_children_max):
+        if i == n_children_max-1:
+            db[segment_id, ind_iter_children+i] = -1
         else:
-            segment_db['children'][serial][i] = segment_db['children'][serial][i+1]
+            db[segment_id, ind_iter_children+i] = db[segment_id, ind_iter_children+i+1]
 
 def _is_position_valid(pos):
     return init_map[tuple(pos)] != wall
@@ -155,20 +162,20 @@ quadrants[2] = [_make_segment_recursive(-1, np.array([41,38]), Direction.WEST,  
 quadrants[3] = [_make_segment_recursive(-1, np.array([42,41]), Direction.SOUTH, 3),]
 
 
-def _trim(segment_serial):
+def _trim(segment_id):
     """trim out the branches that contains no keys"""
     to_remove = []
     branch_has_key = False
-    for i in range(n_item_max):
-        item = segment_db['ordered_items'][segment_serial,i]
+    for i in range(n_items_max):
+        item = db[segment_id,ind_iter_items+i]
         if item == 0:
             break
         if 1 <= item <= 26:
             branch_has_key = True
             break
 
-    for i in range(n_child_max):
-        child = segment_db['children'][segment_serial,i]
+    for i in range(n_children_max):
+        child = db[segment_id, ind_iter_children+i]
         if child == -1:
             break
         child_has_key = _trim(child)
@@ -178,7 +185,7 @@ def _trim(segment_serial):
             branch_has_key = True
 
     for child in to_remove:
-        _remove_child(segment_serial, child)
+        _remove_child(segment_id, child)
 
     return branch_has_key
 
@@ -190,10 +197,10 @@ del quad, s
 
 def visualize_trimmed():
     trimmed_map = np.zeros_like(init_map)
-    def paint(seg_serial):
-        trimmed_map[segment_map==seg_serial] = 2
-        for i in range(n_child_max):
-            c = segment_db['children'][seg_serial,i]
+    def paint(segment_id):
+        trimmed_map[map_segment==segment_id] = 2
+        for i in range(n_children_max):
+            c = db[segment_id, ind_iter_children+i]
             if c != -1:
                 paint(c)
     for quad in quadrants:
@@ -206,92 +213,99 @@ def visualize_trimmed():
             trimmed_map[i,j] = 1
     return trimmed_map
 
+@numba.jit(nopython=True, nogil=True)
+def _build_parent_list(segment_id, db=db, ind_parent=ind_parent):
+    parent_list = -np.ones((128,), np.int64)
+    idx = 0
+    parent_list[idx] = segment_id
 
-def _find_common_parent(seg1:int, seg2:int):
-    # no common parent because they are in different quadrant
-    if segment_db['quadrant'][seg1] != segment_db['quadrant'][seg2]:
-        return None
-
-    # build up a parent list
-    parent_list1 = [seg1]
     while True:
-        p = segment_db['parent'][parent_list1[-1]]
-        parent_list1.append(p)
+        p = db[parent_list[idx],ind_parent]
+        idx += 1
+        parent_list[idx] = p
         if p == -1:
             break
-    # check the other trace
-    p = seg2
-    have_common_parent = True
-    while True:
-        if p in parent_list1 or p == -1:
-            break
-        p = segment_db['parent'][p]
+    return parent_list, idx
 
-    return p
+@numba.jit(nopython=True, nogil=True)
+def _find_common_parent(seg1:int, seg2:int, db=db, ind_quadrant=ind_quadrant, ind_parent=ind_parent):
+    # no common parent because they are in different quadrant
+    if db[seg1, ind_quadrant] != db[seg2, ind_quadrant]:
+        return None
+
+    # build up a parent lists
+        
+    parent_list1, idx_max_1 = _build_parent_list(seg1, db, ind_parent)
+    parent_list2, idx_max_2 = _build_parent_list(seg2, db, ind_parent)
+
+    # check the other trace
+    for common_ind in range(128):
+        if parent_list1[idx_max_1-common_ind] != parent_list2[idx_max_2-common_ind]:
+            break
+    common_ind -= 1
+
+    return parent_list1[idx_max_1-common_ind]
     # if p == -1, that means they are in different main branches of the same quadrant
 
 
-def count_steps_until_entering_the_ancestor(current_seg, *, ancestor_seg=None):
-    step = 0
-    p = segment_db['parent'][current_seg]
-    while True:
-        if p == ancestor_seg or p == -1:
-            break
-        step += segment_db['length'][p]
-        p = segment_db['parent'][p]
-    return step
+@numba.jit('i8(i8,i8,i8[:,:],i8,i8)', nopython=True, nogil=True)
+def count_steps_until_entering_the_ancestor(segment_id, ancestor_seg=-1, db=db,
+                                            ind_steps=ind_steps, ind_length=ind_length):
+    steps = db[segment_id, ind_steps]
+    if ancestor_seg == -1:
+        pass
+    else:
+        to_subtract = db[ancestor_seg, ind_steps] + db[ancestor_seg, ind_length]
+        steps -= to_subtract
+    return steps
 
 
-def move(current, destination):
+@numba.jit('i8(i8,i8,i8,i8,i8[:,:], i8[:,:], i8[:,:], i8,i8,i8)', nopython=True, nogil=True)
+def move(i_curr, j_curr, i_dest, j_dest, map_segment=map_segment, map_steps_from_parent=map_steps_from_parent,
+         db=db, ind_steps=ind_steps, ind_quadrant=ind_quadrant, ind_length=ind_length):
     """Return the number of steps of this move
 
     current:  (i,j)-index of current position
     destination:  (i,j)-index of the destination
     """
     # count the step to move to where the key is
-    dest_seg = segment_map[destination]
+    dest_seg = map_segment[i_dest, j_dest]
 
     steps = 0
 
-    if current == (40,40):
-        steps += step_from_parent_map[destination]
-        steps += segment_db['n_steps_to_before_quadrant_head'][dest_seg]
-        assert (count_steps_until_entering_the_ancestor(dest_seg)
-                == segment_db['n_steps_to_before_quadrant_head'][dest_seg])
+    if i_curr == 40 and j_curr == 40:
+        steps += map_steps_from_parent[i_dest, j_dest]
+        steps += db[dest_seg,ind_steps]
         steps += 2
     else:
-        head_seg = segment_map[current]
-        if segment_db['quadrant'][head_seg] != segment_db['quadrant'][dest_seg]:
+        head_seg = map_segment[i_curr, j_curr]
+        if db[head_seg,ind_quadrant] != db[dest_seg,ind_quadrant]:
             # head and the key are in different quadrants
-            steps += step_from_parent_map[current]-1
-            steps += segment_db['n_steps_to_before_quadrant_head'][head_seg]
-            if (segment_db['quadrant'][head_seg], segment_db['quadrant'][dest_seg]) in [(0,2), (2,0), (1,3), (3,1)]:
+            steps += map_steps_from_parent[i_curr, j_curr]-1
+            steps += db[head_seg, ind_steps]
+            if (db[head_seg,ind_quadrant], db[dest_seg,ind_quadrant]) in [(0,2), (2,0), (1,3), (3,1)]:
                 steps += 5
             else:
                 steps += 3
-            steps += segment_db['n_steps_to_before_quadrant_head'][dest_seg]
-            steps += step_from_parent_map[destination]
+            steps += db[dest_seg, ind_steps]
+            steps += map_steps_from_parent[i_dest, j_dest]
         else:
             p1 = _find_common_parent(head_seg, dest_seg)
             # head and the key are in the same quadrant
             if p1 == dest_seg:
-                steps += step_from_parent_map[current] - 1
-                steps += count_steps_until_entering_the_ancestor(
-                    head_seg, ancestor_seg=dest_seg)
-                steps += segment_db['length'][dest_seg] - step_from_parent_map[destination] + 1
+                steps += map_steps_from_parent[i_curr, j_curr] - 1
+                steps += count_steps_until_entering_the_ancestor(head_seg, ancestor_seg=dest_seg, db=db, ind_steps=ind_steps, ind_length=ind_length)
+                steps += db[dest_seg, ind_length] - map_steps_from_parent[i_dest, j_dest] + 1
             elif p1 == head_seg:
-                steps += segment_db['length'][head_seg] - step_from_parent_map[current]
-                steps += count_steps_until_entering_the_ancestor(
-                    dest_seg, ancestor_seg=head_seg)
-                steps += step_from_parent_map[destination]
+                steps += db[head_seg, ind_length] - map_steps_from_parent[i_curr, j_curr]
+                steps += count_steps_until_entering_the_ancestor(dest_seg, ancestor_seg=head_seg, db=db, ind_steps=ind_steps, ind_length=ind_length)
+                steps += map_steps_from_parent[i_dest, j_dest]
             else:
                 # p1 is some segment in between or the head of the quadrant
-                steps += step_from_parent_map[current] - 1
-                steps += count_steps_until_entering_the_ancestor(
-                    head_seg, ancestor_seg=p1)
+                steps += map_steps_from_parent[i_curr, j_curr] - 1
+                steps += count_steps_until_entering_the_ancestor(head_seg, ancestor_seg=p1, db=db, ind_steps=ind_steps, ind_length=ind_length)
                 steps += 1
-                steps += count_steps_until_entering_the_ancestor(
-                    dest_seg, ancestor_seg=p1)
-                steps += step_from_parent_map[destination]
+                steps += count_steps_until_entering_the_ancestor(dest_seg, ancestor_seg=p1, db=db, ind_steps=ind_steps, ind_length=ind_length)
+                steps += map_steps_from_parent[i_dest, j_dest]
 
     return steps

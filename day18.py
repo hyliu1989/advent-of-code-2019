@@ -40,7 +40,9 @@ class SearchTrace:
         # for quad in [maputil.quadrants[1][1:2]]:
             for seg in quad:
                 search_keys_in_seg_and_children_until_blocked(
-                    seg, self.reachable_keys, self.blockers, self.collected_keys
+                    seg, self.reachable_keys, self.blockers, self.collected_keys,
+                    db_ordered_item=maputil.db_ordered_item,
+                    db_children    =maputil.db_children,
                 )
 
     def get_key(self, key):
@@ -48,7 +50,9 @@ class SearchTrace:
 
         # count the step to move to where the key is
         key_pos = maputil.item_positions[key]
-        n_steps = maputil.move(self.head, key_pos)
+        n_steps = maputil.move(self.head[0], self.head[1], key_pos[0], key_pos[1],
+            map_segment=maputil.map_segment, map_steps_from_parent=maputil.map_steps_from_parent,
+            db=maputil.db, ind_steps=maputil.ind_steps, ind_quadrant=maputil.ind_quadrant, ind_length=maputil.ind_length)
 
         self.step += n_steps
         self.head = key_pos
@@ -70,24 +74,26 @@ class SearchTrace:
                 break
 
             blocker_pos = maputil.item_positions[item]
-            seg = maputil.segment_map[blocker_pos]
+            seg = maputil.map_segment[blocker_pos]
             if abs(item) == obtained_key:  # this checks for both key and door. If True, unlock the blocker.
                 # Remove the blocker from the list
                 self.blockers[idx_blocker:-1] = self.blockers[idx_blocker+1:]
                 # Recursively search
                 search_keys_in_seg_and_children_until_blocked(
                     seg, self.reachable_keys, self.blockers,
-                    self.collected_keys)
+                    self.collected_keys,
+                    db_ordered_item=maputil.db_ordered_item,
+                    db_children    =maputil.db_children,)
                 idx_blocker += 0
             else:
                 idx_blocker += 1
 
 
-@numba.autojit(nopython=True, nogil=True)
+@numba.jit('i8(i8,b1[:],i1[:],b1[:],i8[:,:],i8[:,:])', nopython=True, nogil=True)
 def search_keys_in_seg_and_children_until_blocked(
     seg, reachable_keys, blockers, collected_keys,
-    db_ordered_item=maputil.segment_db['ordered_items'],
-    db_children=maputil.segment_db['children'],
+    db_ordered_item,
+    db_children,
 ):
     # search both the key and the door inside seg
     for i in range(db_ordered_item.shape[1]):
@@ -127,7 +133,7 @@ def search_keys_in_seg_and_children_until_blocked(
             break
 
         # recursively search
-        search_keys_in_seg_and_children_until_blocked(s, reachable_keys, blockers, collected_keys)
+        search_keys_in_seg_and_children_until_blocked(s, reachable_keys, blockers, collected_keys, db_ordered_item, db_children)
 
     return 0
 
