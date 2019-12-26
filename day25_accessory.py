@@ -1,31 +1,59 @@
-import numpy as np
+import itertools
 from intcode import IntcodeComputer, RunState
-import sys
-from pylab import imshow, show, figure
 import pickle
 
-with open('day25-input.txt', 'r') as f:
-    instr_list = [int(w) for w in f.readline().split(',')]
+def display_stdout(comp):
+    while True:
+        s = comp.stdout
+        if s == None:
+            break
+        print(chr(s),end='')
+    print('')
 
-comp = IntcodeComputer(instr_list)
-print(comp._state)
 
+def test_combination(getter, comp):
+    item_list = [
+        # 'asterisk',
+        # 'antenna',
+        'easter egg',
+        # 'jam',
+        'space heater',
+        'festive hat',
+        'fixed point',
+    ]
+    hold = []
 
-class _GetchUnix:
-    # https://stackoverflow.com/questions/510357/python-read-a-single-character-from-the-user
-    def __init__(self):
-        import tty, sys
-    def __call__(self):
-        import sys, tty, termios
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(sys.stdin.fileno())
-            ch = sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch
-getter = _GetchUnix()
+    def cases():
+        for n_chosen in range(1,4):
+            for items in itertools.combinations(item_list, n_chosen):
+                yield items
+
+    for items in cases():
+        i = getter()
+        if i == 'q':
+            break
+        elif i == 'i':
+            comp.stdin = [ord(c) for c in 'inv\n']
+            comp.run()
+            display_stdout(comp)
+            i = getter()
+
+        # drop previously picked items
+        for hold_item in hold:
+            comp.stdin = [ord(c) for c in 'drop '+hold_item+'\n']
+        hold = []
+
+        # pick up items
+        for item in items:
+            comp.stdin = [ord(c) for c in 'take '+item+'\n']
+            hold.append(item)
+
+        # move to test
+        comp.stdin = [ord(c) for c in 'west\n']
+
+        comp.run()
+        display_stdout(comp)
+
 
 def run_game(getter, comp):
     print('Game start!')
@@ -62,13 +90,7 @@ def run_game(getter, comp):
 
         if to_run:
             comp.run()
-
-            while True:
-                s = comp.stdout
-                if s == None:
-                    break
-                print(chr(s),end='')
-            print('')
+            display_stdout(comp)
 
         if comp._state == RunState.FINISHED:
             i = input('To reload? (y/n)')
@@ -76,4 +98,3 @@ def run_game(getter, comp):
                 break
             else:
                 comp = pickle.load(open('day25_save.pickle', 'rb'))
-
