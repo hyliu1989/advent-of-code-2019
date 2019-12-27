@@ -179,13 +179,12 @@ def find_common_parent(seg1, seg2):
 
 
 def count_steps_until_entering_the_ancestor(current_seg, *, ancestor_seg=None):
-    step = 0
-    p = current_seg.parent
-    while True:
-        if p == ancestor_seg or p in range(4):
-            break
-        step += p.length
-        p = p.parent
+    step = current_seg.n_steps_to_before_quadrant_head
+    if ancestor_seg in range(4) or ancestor_seg is None:
+        pass
+    else:
+        to_subtract = ancestor_seg.n_steps_to_before_quadrant_head + ancestor_seg.length
+        step -= to_subtract
     return step
 
 
