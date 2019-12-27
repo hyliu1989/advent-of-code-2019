@@ -122,46 +122,58 @@ if __name__ == '__main__':
             print('blocked', [door for door, _ in start_trace.blocked_lock_and_segments])
             print('reachable_keys', start_trace.reachable_keys)
 
-    task_list = []
 
-    def _bfs(search_trace):
+    def _bfs(search_trace, task_list):
         # record only the trace that requires the minimal step
         min_step = SearchTrace.get_min_step()
-        # if len(search_trace.reachable_keys) == 0:
-        #     if min_step > search_trace.step:
-        #         SearchTrace.set_min_step(search_trace.step)
-        #         print(search_trace.step)
-        #         trace_list.append(search_trace)
-        #     return
+        if len(search_trace.reachable_keys) == 0:
+            if min_step > search_trace.step:
+                SearchTrace.set_min_step(search_trace.step)
+                print('min step', search_trace.step)
+                trace_list.append(search_trace)
+            return
+
         for k in search_trace.reachable_keys:
             s = search_trace.copy()
             info = s.get_key(k)
             if info != 'abort':
                 task_list.append(s)
 
-    def bfs_and_dfs(start_trace):
-        global task_list
-        n_collected_keys = 0
 
-        task_list.append(start_trace)
-        while len(task_list[:1]) != 0:
-            n_keys_new = len(task_list[0].collected_keys)
-            if n_collected_keys != n_keys_new:
-                # sort
-                print('task_list[0:2] steps (before sort)', task_list[0].step, task_list[1].step)
-                task_list = sorted(task_list, key=lambda x: x.step)
-                print('task_list[0:2] steps (after sort) ', task_list[0].step, task_list[1].step)
-                print('len(list)', len(task_list))
-                print('='*40)
-            n_collected_keys = n_keys_new
+    def bfs_with_batch(start_trace):
+        curr_key_num = 0
+        curr_task_list = [start_trace]
+        task_lists_later = {}
+        threshold = 10000
 
-            if n_keys_new == 7:
-                n_collected_keys = n_keys_new
-                break
+        while True:
+            task_list_more_key = []
+            while curr_task_list:
+                s = curr_task_list[0]
+                curr_task_list = curr_task_list[1:]
+                _bfs(s, task_list_more_key)
 
-            s = task_list[0]
-            task_list = task_list[1:]
-            _bfs(s)
+            if len(task_list_more_key) > threshold:
+                saved = task_lists_later.get(curr_key_num+1)
+                if saved:
+                    task_list_more_key += saved
+                task_list_more_key = sorted(task_list_more_key, key=lambda x: x.step)
+                task_lists_later[curr_key_num+1] = task_list_more_key[threshold:]
+                task_list_more_key = task_list_more_key[:threshold]
+            else:
+                task_list_more_key = sorted(task_list_more_key, key=lambda x: x.step)
+            
+            curr_task_list = task_list_more_key
+            curr_key_num += 1
 
-        for s in task_list:
-            dfs(s)
+            if not curr_task_list:
+                while True:
+                    curr_key_num -= 1
+                    task_list_temp = task_lists_later.get(curr_key_num)
+                    if task_list_temp:
+                        curr_task_list = task_list_temp[:threshold]
+                        task_list_temp = task_list_temp[threshold:]
+                        task_lists_later[curr_key_num] = task_list_temp
+                        break
+                    if curr_key_num == 0:
+                        return
