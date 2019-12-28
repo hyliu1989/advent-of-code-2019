@@ -21,7 +21,6 @@ class SearchTrace:
         self.blockers =  np.zeros(26*2+1, np.bool)
         self.collected_keys = np.zeros(26+1, np.bool)
         self.step = 0
-        self.head = (40,40)
         self.trace = []
 
         if to_init_search:
@@ -42,7 +41,6 @@ class SearchTrace:
         ret.blockers = self.blockers.copy()
         ret.collected_keys = self.collected_keys.copy()
         ret.step = self.step
-        ret.head = self.head
         ret.trace = self.trace.copy()
         return ret
 
@@ -50,7 +48,7 @@ class SearchTrace:
         self.reachable_keys = np.packbits(self.reachable_keys)
         self.blockers = np.packbits(self.blockers)
         self.collected_keys = np.packbits(self.collected_keys)
-        self.trace = np.array(self.trace)
+        self.trace = np.array(self.trace, np.uint8)
         return self
 
     def unpack(self):
@@ -71,11 +69,10 @@ class SearchTrace:
         assert self.reachable_keys[key] == True
 
         # count the step to move to where the key is
+        head_pos = maputil.item_positions[self.trace[-1]] if self.trace else (40,40)
         key_pos = maputil.item_positions[key]
-        n_steps = maputil.move(self.head, key_pos)
-
+        n_steps = maputil.move(head_pos, key_pos)
         self.step += n_steps
-        self.head = key_pos
 
         self.reachable_keys[key] = False
         self.collected_keys[key] = True
