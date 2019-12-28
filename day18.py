@@ -20,7 +20,7 @@ class SearchTrace:
         self.reachable_keys = np.zeros(26+1, np.bool)
         self.blockers =  np.zeros(26*2+1, np.bool)
         self.collected_keys = np.zeros(26+1, np.bool)
-        self.step = 0
+        self.step = np.uint32(0)
         self.trace = []
 
         if to_init_search:
@@ -48,14 +48,12 @@ class SearchTrace:
         self.reachable_keys = np.packbits(self.reachable_keys)
         self.blockers = np.packbits(self.blockers)
         self.collected_keys = np.packbits(self.collected_keys)
-        self.trace = np.array(self.trace, np.uint8)
         return self
 
     def unpack(self):
         self.reachable_keys = np.unpackbits(self.reachable_keys)[:27]
         self.blockers = np.unpackbits(self.blockers)[:26*2+1]
         self.collected_keys = np.unpackbits(self.collected_keys)[:27]
-        self.trace = list(self.trace)
         return self
 
     def _initial_search(self):
@@ -76,7 +74,7 @@ class SearchTrace:
 
         self.reachable_keys[key] = False
         self.collected_keys[key] = True
-        self.trace.append(key)
+        self.trace = [self.trace, np.uint8(key)]
         obtained_key = key
 
         if self.step > self.get_min_step():
@@ -159,10 +157,16 @@ if __name__ == '__main__':
         min_step = SearchTrace.get_min_step()
         if np.sum(search_trace.reachable_keys) == 0:
             if min_step > search_trace.step:
-                with open('day18-result.txt', 'a') as f:
-                    f.write('%d %s\n'%(search_trace.step, search_trace.trace.__repr__()))
-                SearchTrace.set_min_step(search_trace.step)
                 print('min step', search_trace.step)
+                with open('day18-result.txt', 'a') as f:
+                    curr_trace = search_trace.trace
+                    to_write = []
+                    while curr_trace:
+                        to_write.append(curr_trace[-1])
+                        curr_trace = curr_trace[0]
+                    to_write = to_write[::-1]
+                    f.write('%d %s\n'%(search_trace.step, to_write.__repr__()))
+                SearchTrace.set_min_step(search_trace.step)
                 trace_list.append(search_trace)
 
             return
