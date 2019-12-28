@@ -6,7 +6,7 @@ Segment = maputil.Segment
 
 
 class SearchTrace:
-    min_step = np.inf
+    min_step = 6060  # this number is obtained from test2()
     @classmethod
     def get_min_step(cls):
         return cls.min_step
@@ -151,6 +151,16 @@ if __name__ == '__main__':
             print('blocked', [door for door, _ in start_trace.blockers])
             print('reachable_keys', start_trace.reachable_keys)
 
+    def test2():
+        n_keys = 0
+        while n_keys != 26:
+            for i in range(1,27):
+                if start_trace.reachable_keys[i]:
+                    start_trace.get_key(i)
+                    n_keys += 1
+                    break
+
+        print(start_trace.step)
 
     def _bfs(search_trace, task_list):
         # record only the trace that requires the minimal step
