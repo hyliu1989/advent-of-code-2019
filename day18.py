@@ -46,6 +46,20 @@ class SearchTrace:
         ret.trace = self.trace.copy()
         return ret
 
+    def pack(self):
+        self.reachable_keys = np.packbits(self.reachable_keys)
+        self.blockers = np.packbits(self.blockers)
+        self.collected_keys = np.packbits(self.collected_keys)
+        self.trace = np.array(self.trace)
+        return self
+
+    def unpack(self):
+        self.reachable_keys = np.unpackbits(self.reachable_keys)[:27]
+        self.blockers = np.unpackbits(self.blockers)[:26*2+1]
+        self.collected_keys = np.unpackbits(self.collected_keys)[:27]
+        self.trace = list(self.trace)
+        return self
+
     def _initial_search(self):
         for quad in maputil.quadrants:
         # for quad in [maputil.quadrants[1][1:2]]:
@@ -159,12 +173,13 @@ if __name__ == '__main__':
             s = search_trace.copy()
             info = s.get_key(k)
             if info != 'abort':
-                heapq.heappush(task_list, s)
+                heapq.heappush(task_list, s.pack())
 
 
     def bfs_with_heap(start_trace):
-        task_list = [start_trace]  # curr_task_list
+        start_trace.pack()
+        task_list = [start_trace]
 
         while task_list:
-            s = heapq.heappop(task_list)
+            s = heapq.heappop(task_list).unpack()
             _bfs(s, task_list)
