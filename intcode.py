@@ -1,51 +1,6 @@
 import numpy as np
 from enum import IntEnum
 
-def run_instruction_list(instruction_list, noun=12, verb=2, verbose=True):
-    """Intcode computer from day 2 challenge
-    """
-    instruction_list = list(instruction_list)
-    instruction_list[1] = noun
-    instruction_list[2] = verb
-    total_len = len(instruction_list)
-
-    count = 0
-    instr_pointer = 0
-    while True:
-        if instr_pointer >= total_len:
-            print('error: reach the end without encountering 99')
-            break
-
-        instr = instruction_list[instr_pointer]
-
-        # instruction 99
-        if instr == 99:
-            num_value_of_instr = 1
-            instr_pointer += num_value_of_instr
-            if verbose:
-                print('finished!')
-            break
-
-        # instructions 1 (addition) and 2 (multiplication)
-        if instr_pointer+3 >= total_len:
-            print('error: reach the end without encountering 99')
-            break
-        i1,i2,i3 = instruction_list[instr_pointer+1:instr_pointer+4]
-        num_value_of_instr = 4
-        number1, number2 = instruction_list[i1], instruction_list[i2]
-        if instr == 1:
-            instruction_list[i3] = number1 + number2
-        elif instr == 2:
-            instruction_list[i3] = number1 * number2
-        else:
-            print('error: unknown instruction_list')
-            break
-
-        instr_pointer += num_value_of_instr
-    return instruction_list
-
-
-
 class Opcode(IntEnum):
     ADD = 1
     MULTIPLY = 2
@@ -311,3 +266,49 @@ class IntcodeComputer():
 
     def _op_terminate(self, params, param_modes):
         self._state = RunState.FINISHED
+
+
+
+
+def run_instruction_list(instruction_list, noun=12, verb=2, verbose=True):
+    """Intcode computer from day 2 challenge
+    """
+    instruction_list = list(instruction_list)
+    instruction_list[1] = noun
+    instruction_list[2] = verb
+    total_len = len(instruction_list)
+
+    count = 0
+    instr_pointer = 0
+    while True:
+        if instr_pointer >= total_len:
+            print('error: reach the end without encountering 99')
+            break
+
+        instr = instruction_list[instr_pointer]
+
+        # instruction 99
+        if instr == 99:
+            num_value_of_instr = 1
+            instr_pointer += num_value_of_instr
+            if verbose:
+                print('finished!')
+            break
+
+        # instructions 1 (addition) and 2 (multiplication)
+        if instr_pointer+3 >= total_len:
+            print('error: reach the end without encountering 99')
+            break
+        i1,i2,i3 = instruction_list[instr_pointer+1:instr_pointer+4]
+        num_value_of_instr = 4
+        number1, number2 = instruction_list[i1], instruction_list[i2]
+        if instr == 1:
+            instruction_list[i3] = number1 + number2
+        elif instr == 2:
+            instruction_list[i3] = number1 * number2
+        else:
+            print('error: unknown instruction_list')
+            break
+
+        instr_pointer += num_value_of_instr
+    return instruction_list
