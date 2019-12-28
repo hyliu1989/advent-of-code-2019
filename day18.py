@@ -1,6 +1,8 @@
 import maputil18 as maputil
 import numpy as np
 from pylab import imshow, show, figure, pause
+import heapq
+
 
 class SearchTrace:
     min_step = np.inf
@@ -23,6 +25,15 @@ class SearchTrace:
 
         if to_init_search:
             self._initial_search()
+
+
+    def __ge__(self, other):  return self.step >= other.step
+    def __gt__(self, other):  return self.step >  other.step
+    def __le__(self, other):  return self.step <= other.step
+    def __lt__(self, other):  return self.step <  other.step
+    def __eq__(self, other):  return self.step == other.step
+    def __ne__(self, other):  return self.step != other.step
+
 
     def copy(self):
         ret = SearchTrace()
@@ -137,43 +148,12 @@ if __name__ == '__main__':
             s = search_trace.copy()
             info = s.get_key(k)
             if info != 'abort':
-                task_list.append(s)
+                heapq.heappush(task_list, s)
 
 
-    def bfs_with_batch(start_trace):
-        curr_key_num = 0
-        curr_task_list = [start_trace]
-        task_lists_later = {}
-        threshold = 100000
+    def bfs_with_heap(start_trace):
+        task_list = [start_trace]  # curr_task_list
 
-        while True:
-            task_list_more_key = []
-            while curr_task_list:
-                s = curr_task_list[0]
-                curr_task_list = curr_task_list[1:]
-                _bfs(s, task_list_more_key)
-
-            if len(task_list_more_key) > threshold:
-                saved = task_lists_later.get(curr_key_num+1)
-                if saved:
-                    task_list_more_key += saved
-                task_list_more_key = sorted(task_list_more_key, key=lambda x: x.step)
-                task_lists_later[curr_key_num+1] = task_list_more_key[threshold:]
-                task_list_more_key = task_list_more_key[:threshold]
-            else:
-                task_list_more_key = sorted(task_list_more_key, key=lambda x: x.step)
-            
-            curr_task_list = task_list_more_key
-            curr_key_num += 1
-
-            if not curr_task_list:
-                while True:
-                    curr_key_num -= 1
-                    task_list_temp = task_lists_later.get(curr_key_num)
-                    if task_list_temp:
-                        curr_task_list = task_list_temp[:threshold]
-                        task_list_temp = task_list_temp[threshold:]
-                        task_lists_later[curr_key_num] = task_list_temp
-                        break
-                    if curr_key_num == 0:
-                        return
+        while task_list:
+            s = heapq.heappop(task_list)
+            _bfs(s, task_list)
