@@ -2,6 +2,7 @@ import maputil18 as maputil
 import numpy as np
 from pylab import imshow, show, figure, pause
 import heapq
+Segment = maputil.Segment
 
 
 class SearchTrace:
@@ -80,14 +81,14 @@ class SearchTrace:
                 self.blockers[item] = False
                 # Recursively search
                 blocker_pos = maputil.item_positions[item]
-                seg = maputil.segment_map[blocker_pos]
+                seg = Segment.MAP_SEGMENT[blocker_pos]
                 search_keys_in_seg_and_children_until_blocked(
                     seg, self.reachable_keys, self.blockers, self.collected_keys
                 )
 
 
 def search_keys_in_seg_and_children_until_blocked(seg, reachable_keys, blockers, collected_keys):
-    for item, _ in seg.ordered_items:
+    for item in seg.ordered_items:
         stopped = False
         if 1 <= item <= 26:  # key
             if collected_keys[item]:
