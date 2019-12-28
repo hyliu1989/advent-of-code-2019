@@ -143,21 +143,24 @@ for quad in quadrants:
         _trim(s)
 del quad, s
 
-# def visualize_trimmed():
-#     trimmed_map = np.zeros_like(init_map)
-#     def paint(s):
-#         trimmed_map[s.segment!=0] = 2
-#         for c in s.children:
-#             paint(c)
-#     for quad in quadrants:
-#         for s in quad:
-#             paint(s)
+def visualize_trimmed():
+    trimmed_map = np.zeros_like(init_map)
+    def paint(s):
+        trimmed_map[Segment.MAP_SEGMENT==s] = 2
+        for c in s.children:
+            paint(c)
+    for quad in quadrants:
+        for s in quad:
+            paint(s)
 
-#     for k in item_positions:
-#         if k > 0:
-#             i,j = item_positions[k]
-#             trimmed_map[i,j] = 1
-#     return trimmed_map
+    for k in item_positions:
+        if k > 0:
+            i,j = item_positions[k]
+            trimmed_map[i,j] = 1
+        else:
+            i,j = item_positions[k]
+            trimmed_map[i,j] = -1
+    return trimmed_map
 
 
 def find_common_parent(seg1, seg2):
