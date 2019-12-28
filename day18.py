@@ -144,7 +144,7 @@ if __name__ == '__main__':
         curr_key_num = 0
         curr_task_list = [start_trace]
         task_lists_later = {}
-        threshold = 10000
+        threshold = 100000
 
         while True:
             task_list_more_key = []
