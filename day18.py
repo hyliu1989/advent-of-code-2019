@@ -183,3 +183,5 @@ if __name__ == '__main__':
         while task_list:
             s = heapq.heappop(task_list).unpack()
             _bfs(s, task_list)
+
+    bfs_with_heap(start_trace)
