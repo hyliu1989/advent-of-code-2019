@@ -162,9 +162,12 @@ if __name__ == '__main__':
         min_step = SearchTrace.get_min_step()
         if np.sum(search_trace.reachable_keys) == 0:
             if min_step > search_trace.step:
+                with open('day18-result.txt', 'a') as f:
+                    f.write('%d %s\n'%(search_trace.step, search_trace.trace.__repr__()))
                 SearchTrace.set_min_step(search_trace.step)
                 print('min step', search_trace.step)
                 trace_list.append(search_trace)
+
             return
 
         for k in range(1,27):
