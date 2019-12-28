@@ -189,12 +189,48 @@ if __name__ == '__main__':
             print('keys:', n_collected_keys, ' steps:', search_trace.step, ' task:', len(task_list))
 
         touched = False
+        group_ej = False
+        group_dqz = False
+        group_mvw = False
         for k in range(1,27):
             if not search_trace.reachable_keys[k]:
                 continue
             touched = True
             s = search_trace.copy()
-            info = s.get_key(k)
+            if   k == 20:  # tu
+                info = s.get_key(20)  # t
+                info = s.get_key(21)  # u
+            elif k == 19:  # sbor
+                info = s.get_key(19)  # s
+                info = s.get_key( 2)  # b
+                info = s.get_key(15)  # o
+                info = s.get_key(18)  # r
+            elif k == 11:  # kgx
+                info = s.get_key(11)  # k
+                info = s.get_key( 7)  # g
+                info = s.get_key(24)  # x
+            elif k in [5,10]:  # ej
+                if group_ej:
+                    continue
+                group_ej = True
+                info = s.get_key( 5)  # e
+                info = s.get_key(10)  # j
+            elif k in [4,17,26]:  # dqz
+                if group_dqz:
+                    continue
+                group_dqz = True
+                info = s.get_key( 4)  # d
+                info = s.get_key(17)  # q
+                info = s.get_key(26)  # z
+            elif k in [13,22,23]:  # mvw
+                if group_mvw:
+                    continue
+                group_mvw = True
+                info = s.get_key(13)  # m
+                info = s.get_key(22)  # v
+                info = s.get_key(23)  # w
+            else:
+                info = s.get_key(k)
             if info != 'abort':
                 heapq.heappush(task_list, s.pack())
         assert touched
