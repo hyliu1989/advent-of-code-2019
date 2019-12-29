@@ -249,9 +249,9 @@ if __name__ == '__main__':
                 if group_mvw:
                     continue
                 group_mvw = True
+                if not s.get_key(23): continue  # w
                 if not s.get_key(13): continue  # m
                 if not s.get_key(22): continue  # v
-                if not s.get_key(23): continue  # w
             else:
                 if not s.get_key(k):
                     continue
