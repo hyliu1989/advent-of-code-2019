@@ -207,12 +207,13 @@ def move(current, destination):
     dest_seg = Segment.MAP_SEGMENT[destination]
     steps = 0
 
-    if current == (40,40):
+    if current in [(40,40), (39,41), (39,39), (41,39), (41,41)]:
         steps += steps_in_segment[destination]
         steps += dest_seg.n_steps_to_before_quadrant_head
         assert (count_steps_until_entering_the_ancestor(dest_seg)
                 == dest_seg.n_steps_to_before_quadrant_head)
-        steps += 2
+        if current == (40,40):
+            steps += 2
     else:
         head_seg = Segment.MAP_SEGMENT[current]
         if head_seg.quadrant != dest_seg.quadrant:

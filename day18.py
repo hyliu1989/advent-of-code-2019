@@ -17,20 +17,17 @@ class SearchTrace:
             cls.min_step = value
 
     def __init__(self, to_init_search=False, quadrant=None):
-        self.reachable_keys = np.zeros(26+1, np.bool)
-        self.blockers =  np.zeros(26*2+1, np.bool)
+        if quadrant is None:
+            self.reachable_keys = np.zeros((1,26+1), np.bool)
+            self.blockers = np.zeros((1,26*2+1), np.bool)
+            self.head = [(40,40)]
+        else:
+            self.reachable_keys = np.zeros((4,26+1), np.bool)
+            self.blockers = np.zeros((4,26*2+1), np.bool)
+            self.head = [(39,41), (39,39), (41,39), (41,41)]
+
         self.collected_keys = np.zeros(26+1, np.bool)
         self.step = np.uint32(0)
-        if quadrant is None:
-            self.head = (40,40)
-        elif quadrant == 0:
-            self.head = (39,41)
-        elif quadrant == 1:
-            self.head = (39,39)
-        elif quadrant == 2:
-            self.head = (41,39)
-        elif quadrant == 3:
-            self.head = (41,41)
         self.trace = []
 
         if to_init_search:
@@ -51,44 +48,48 @@ class SearchTrace:
         ret.blockers = self.blockers.copy()
         ret.collected_keys = self.collected_keys.copy()
         ret.step = self.step
-        ret.head = self.head
+        ret.head = self.head.copy()
         ret.trace = self.trace.copy()
         return ret
 
     def pack(self):
-        self.reachable_keys = np.packbits(self.reachable_keys)
-        self.blockers = np.packbits(self.blockers)
+        self.reachable_keys = np.packbits(self.reachable_keys, axis=-1)
+        self.blockers = np.packbits(self.blockers, axis=-1)
         self.collected_keys = np.packbits(self.collected_keys)
         return self
 
     def unpack(self):
-        self.reachable_keys = np.unpackbits(self.reachable_keys)[:27]
-        self.blockers = np.unpackbits(self.blockers)[:26*2+1]
+        self.reachable_keys = np.unpackbits(self.reachable_keys, axis=-1)[:,:27]
+        self.blockers = np.unpackbits(self.blockers, axis=-1)[:,:26*2+1]
         self.collected_keys = np.unpackbits(self.collected_keys)[:27]
         return self
 
     def _initial_search(self, quadrant):
-        if quadrant is None:
-            quadrants = maputil.quadrants
-        else:
-            quadrants = maputil.quadrants[quadrant:quadrant+1]
-        
-        for quad in quadrants:
-            for seg in quad:
-                search_keys_in_seg_and_children_until_blocked(
-                    seg, self.reachable_keys, self.blockers, self.collected_keys)
+        for i in range(4):
+            for seg in maputil.quadrants[i]:
+                if quadrant is None:
+                    search_keys_in_seg_and_children_until_blocked(
+                            seg, self.reachable_keys[0], self.blockers[0], self.collected_keys)
+                else:
+                    search_keys_in_seg_and_children_until_blocked(
+                            seg, self.reachable_keys[i], self.blockers[i], self.collected_keys)
 
     def get_key(self, key):
-        assert self.reachable_keys[key] == True
+        key_pos = maputil.item_positions[key]
+
+        if len(self.head) == 1:
+            i_robot = 0
+        else:
+            i_robot = Segment.MAP_SEGMENT[key_pos].quadrant
+
+        assert self.reachable_keys[i_robot, key] == True
 
         # count the step to move to where the key is
-        key_pos = maputil.item_positions[key]
-        n_steps = maputil.move(self.head, key_pos)
-
+        n_steps = maputil.move(self.head[i_robot], key_pos)
         self.step += n_steps
-        self.head = key_pos
+        self.head[i_robot] = key_pos
 
-        self.reachable_keys[key] = False
+        self.reachable_keys[i_robot, key] = False
         self.collected_keys[key] = True
         self.trace = [self.trace, np.uint8(key)]
         obtained_key = key
@@ -98,17 +99,17 @@ class SearchTrace:
 
         # Check the removed blockers
         for item in range(-26,27):
-            if not self.blockers[item] or item == 0:
+            if not self.blockers[i_robot, item] or item == 0:
                 continue
 
             if abs(item) == obtained_key:  # this checks for both key and door
                 # Remove the blocker from the list
-                self.blockers[item] = False
+                self.blockers[i_robot, item] = False
                 # Recursively search
                 blocker_pos = maputil.item_positions[item]
                 seg = Segment.MAP_SEGMENT[blocker_pos]
                 search_keys_in_seg_and_children_until_blocked(
-                    seg, self.reachable_keys, self.blockers, self.collected_keys
+                    seg, self.reachable_keys[i_robot], self.blockers[i_robot], self.collected_keys
                 )
 
         return True
@@ -141,7 +142,7 @@ def search_keys_in_seg_and_children_until_blocked(seg, reachable_keys, blockers,
 
 if __name__ == '__main__':
     trace_list = []
-    start_trace = SearchTrace(True)
+    # start_trace = SearchTrace(True)
 
     def dfs(search_trace):
         # record only the trace that requires the minimal step
@@ -154,7 +155,7 @@ if __name__ == '__main__':
             return
 
         for k in range(1,27):
-            if not search_trace.reachable_keys[k]:
+            if not search_trace.reachable_keys[0,k]:
                 continue
             s = search_trace.copy()
             info = s.get_key(k)
@@ -164,16 +165,18 @@ if __name__ == '__main__':
     # dfs(start_trace)
 
     def test():
+        start_trace = SearchTrace(True)
         for i in [1, 4, 5, 9, 8, 10, 17, 16, 22, 23, 7, 24, 26, 11, 12, 13]:
             start_trace.get_key(i)
             print('blocked', [door for door, _ in start_trace.blockers])
             print('reachable_keys', start_trace.reachable_keys)
 
     def test2():
+        start_trace = SearchTrace(True)
         n_keys = 0
         while n_keys != 26:
             for i in range(1,27):
-                if start_trace.reachable_keys[i]:
+                if start_trace.reachable_keys[0,i]:
                     start_trace.get_key(i)
                     n_keys += 1
                     break
@@ -207,11 +210,12 @@ if __name__ == '__main__':
             print('keys:', n_collected_keys, ' steps:', search_trace.step, ' task:', len(task_list))
 
         touched = False
+        reachable_keys = search_trace.reachable_keys.sum(axis=0)
         group_ej = False
         group_dqz = False
         group_mvw = False
         for k in range(1,27):
-            if not search_trace.reachable_keys[k]:
+            if not reachable_keys[k]:
                 continue
             touched = True
             s = search_trace.copy()
@@ -261,4 +265,8 @@ if __name__ == '__main__':
             s = heapq.heappop(task_list).unpack()
             _bfs(s, task_list)
 
-    bfs_with_heap(start_trace)
+    # Part 1
+    # bfs_with_heap(SearchTrace(True))
+
+    # Part 2
+    bfs_with_heap(SearchTrace(True, quadrant='all'))
