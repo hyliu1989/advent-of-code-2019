@@ -78,7 +78,7 @@ class SearchTrace:
         obtained_key = key
 
         if self.step > self.get_min_step():
-            return 'abort'
+            return False
 
         # Check the removed blockers
         for item in range(-26,27):
@@ -94,6 +94,8 @@ class SearchTrace:
                 search_keys_in_seg_and_children_until_blocked(
                     seg, self.reachable_keys, self.blockers, self.collected_keys
                 )
+
+        return True
 
 
 def search_keys_in_seg_and_children_until_blocked(seg, reachable_keys, blockers, collected_keys):
@@ -140,7 +142,7 @@ if __name__ == '__main__':
                 continue
             s = search_trace.copy()
             info = s.get_key(k)
-            if info != 'abort':
+            if info != False:
                 dfs(s)
 
     # dfs(start_trace)
@@ -190,7 +192,7 @@ if __name__ == '__main__':
 
         touched = False
         group_ej = False
-        group_dqz = False
+        # group_dqz = False
         group_mvw = False
         for k in range(1,27):
             if not search_trace.reachable_keys[k]:
@@ -198,41 +200,41 @@ if __name__ == '__main__':
             touched = True
             s = search_trace.copy()
             if   k == 20:  # tu
-                info = s.get_key(20)  # t
-                info = s.get_key(21)  # u
+                if not s.get_key(20): continue  # t
+                if not s.get_key(21): continue  # u
             elif k == 19:  # sbor
-                info = s.get_key(19)  # s
-                info = s.get_key( 2)  # b
-                info = s.get_key(15)  # o
-                info = s.get_key(18)  # r
+                if not s.get_key(19): continue  # s
+                if not s.get_key( 2): continue  # b
+                if not s.get_key(15): continue  # o
+                if not s.get_key(18): continue  # r
             elif k == 11:  # kgx
-                info = s.get_key(11)  # k
-                info = s.get_key( 7)  # g
-                info = s.get_key(24)  # x
+                if not s.get_key(11): continue  # k
+                if not s.get_key( 7): continue  # g
+                if not s.get_key(24): continue  # x
             elif k in [5,10]:  # ej
                 if group_ej:
                     continue
                 group_ej = True
-                info = s.get_key( 5)  # e
-                info = s.get_key(10)  # j
-            elif k in [4,17,26]:  # dqz
-                if group_dqz:
-                    continue
-                group_dqz = True
-                info = s.get_key( 4)  # d
-                info = s.get_key(17)  # q
-                info = s.get_key(26)  # z
+                if not s.get_key( 5): continue  # e
+                if not s.get_key(10): continue  # j
+            # elif k in [4,17,26]:  # dqz
+            #     if group_dqz:
+            #         continue
+            #     group_dqz = True
+            #     if not s.get_key( 4): continue  # d
+            #     if not s.get_key(17): continue  # q
+            #     if not s.get_key(26): continue  # z
             elif k in [13,22,23]:  # mvw
                 if group_mvw:
                     continue
                 group_mvw = True
-                info = s.get_key(13)  # m
-                info = s.get_key(22)  # v
-                info = s.get_key(23)  # w
+                if not s.get_key(13): continue  # m
+                if not s.get_key(22): continue  # v
+                if not s.get_key(23): continue  # w
             else:
-                info = s.get_key(k)
-            if info != 'abort':
-                heapq.heappush(task_list, s.pack())
+                if not s.get_key(k):
+                    continue
+            heapq.heappush(task_list, s.pack())
         assert touched
 
     def bfs_with_heap(start_trace):
