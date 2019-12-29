@@ -103,17 +103,15 @@ def _make_segment_recursive(parent, pos, prev_move, quadrant)-> Segment:
             return ret
 
 
-quadrants = [None] * 4
-quadrants[0] = [_make_segment_recursive(0, np.array([39,42]), Direction.EAST,  0),
-                _make_segment_recursive(0, np.array([38,41]), Direction.NORTH, 0),]
+quadrants = [None] * 2
+quadrants[0] = [_make_segment_recursive(0, np.array([3, 9]), Direction.EAST,  0),
+                _make_segment_recursive(0, np.array([2, 8]), Direction.NORTH, 0),
+                _make_segment_recursive(0, np.array([3, 7]), Direction.WEST,  0),]
 
-quadrants[1] = [_make_segment_recursive(1, np.array([38,39]), Direction.NORTH, 1),
-                _make_segment_recursive(1, np.array([39,38]), Direction.WEST,  1),]
+quadrants[1] = [_make_segment_recursive(1, np.array([5, 7]), Direction.WEST,  1),
+                _make_segment_recursive(1, np.array([6, 8]), Direction.SOUTH, 1),
+                _make_segment_recursive(1, np.array([5, 9]), Direction.EAST,  1),]
 
-quadrants[2] = [_make_segment_recursive(2, np.array([41,38]), Direction.WEST,  2),
-                _make_segment_recursive(2, np.array([42,39]), Direction.SOUTH, 2),]
-
-quadrants[3] = [_make_segment_recursive(3, np.array([42,41]), Direction.SOUTH, 3),]
 
 
 def _trim(segment):
@@ -180,6 +178,7 @@ def find_common_parent(seg1, seg2):
             break
         p = p.parent
 
+    assert have_common_parent
     if have_common_parent:
         return p, None
     else:
@@ -187,6 +186,10 @@ def find_common_parent(seg1, seg2):
 
 
 def count_steps_until_entering_the_ancestor(current_seg, *, ancestor_seg=None):
+    p = current_seg.parent
+    while p != ancestor_seg and ancestor_seg is not None and ancestor_seg not in range(2):
+        p = p.parent
+
     step = current_seg.n_steps_to_before_quadrant_head
     if ancestor_seg in range(4) or ancestor_seg is None:
         pass
@@ -208,22 +211,19 @@ def move(current, destination):
     dest_seg = Segment.MAP_SEGMENT[destination]
     steps = 0
 
-    if current == (40,40):
+    if current == (4,8):
         steps += steps_in_segment[destination]
         steps += dest_seg.n_steps_to_before_quadrant_head
         assert (count_steps_until_entering_the_ancestor(dest_seg)
                 == dest_seg.n_steps_to_before_quadrant_head)
-        steps += 2
+        steps += 1
     else:
         head_seg = Segment.MAP_SEGMENT[current]
         if head_seg.quadrant != dest_seg.quadrant:
             # head and the key are in different quadrants
             steps += steps_in_segment[current]-1
             steps += head_seg.n_steps_to_before_quadrant_head
-            if (head_seg.quadrant, dest_seg.quadrant) in [(0,2), (2,0), (1,3), (3,1)]:
-                steps += 5
-            else:
-                steps += 3
+            steps += 3
             steps += dest_seg.n_steps_to_before_quadrant_head
             steps += steps_in_segment[destination]
         elif head_seg is dest_seg:
