@@ -98,19 +98,20 @@ class SearchTrace:
             return False
 
         # Check the removed blockers
-        for item in range(-26,27):
-            if not self.blockers[i_robot, item] or item == 0:
-                continue
+        for i_robot in range(len(self.head)):
+            for item in range(-26,27):
+                if not self.blockers[i_robot, item] or item == 0:
+                    continue
 
-            if abs(item) == obtained_key:  # this checks for both key and door
-                # Remove the blocker from the list
-                self.blockers[i_robot, item] = False
-                # Recursively search
-                blocker_pos = maputil.item_positions[item]
-                seg = Segment.MAP_SEGMENT[blocker_pos]
-                search_keys_in_seg_and_children_until_blocked(
-                    seg, self.reachable_keys[i_robot], self.blockers[i_robot], self.collected_keys
-                )
+                if abs(item) == obtained_key:  # this checks for both key and door
+                    # Remove the blocker from the list
+                    self.blockers[i_robot, item] = False
+                    # Recursively search
+                    blocker_pos = maputil.item_positions[item]
+                    seg = Segment.MAP_SEGMENT[blocker_pos]
+                    search_keys_in_seg_and_children_until_blocked(
+                        seg, self.reachable_keys[i_robot], self.blockers[i_robot], self.collected_keys
+                    )
 
         return True
 
