@@ -192,7 +192,7 @@ if __name__ == '__main__':
 
         touched = False
         group_ej = False
-        # group_dqz = False
+        group_dqz = False
         group_mvw = False
         for k in range(1,27):
             if not search_trace.reachable_keys[k]:
@@ -217,13 +217,13 @@ if __name__ == '__main__':
                 group_ej = True
                 if not s.get_key( 5): continue  # e
                 if not s.get_key(10): continue  # j
-            # elif k in [4,17,26]:  # dqz
-            #     if group_dqz:
-            #         continue
-            #     group_dqz = True
-            #     if not s.get_key( 4): continue  # d
-            #     if not s.get_key(17): continue  # q
-            #     if not s.get_key(26): continue  # z
+            elif k in [4,17,26]:  # dqz
+                if group_dqz:
+                    continue
+                group_dqz = True
+                if not s.get_key( 4): continue  # d
+                if not s.get_key(17): continue  # q
+                if not s.get_key(26): continue  # z
             elif k in [13,22,23]:  # mvw
                 if group_mvw:
                     continue
