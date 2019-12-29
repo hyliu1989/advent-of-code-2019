@@ -162,10 +162,14 @@ if __name__ == '__main__':
 
         print(start_trace.step)
 
+
+    max_num_of_keys_collected = 0
     def _bfs(search_trace, task_list):
+        global max_num_of_keys_collected
         # record only the trace that requires the minimal step
         min_step = SearchTrace.get_min_step()
-        if np.sum(search_trace.reachable_keys) == 0:
+        n_collected_keys = np.sum(search_trace.collected_keys)
+        if n_collected_keys == 26:
             if min_step > search_trace.step:
                 print('min step', search_trace.step)
                 with open('day18-result.txt', 'a') as f:
@@ -178,17 +182,22 @@ if __name__ == '__main__':
                     f.write('%d %s\n'%(search_trace.step, to_write.__repr__()))
                 SearchTrace.set_min_step(search_trace.step)
                 trace_list.append(search_trace)
-
             return
+        
+        if max_num_of_keys_collected < n_collected_keys:
+            max_num_of_keys_collected = n_collected_keys
+            print('keys:', n_collected_keys, ' steps:', search_trace.step, ' task:', len(task_list))
 
+        touched = False
         for k in range(1,27):
             if not search_trace.reachable_keys[k]:
                 continue
+            touched = True
             s = search_trace.copy()
             info = s.get_key(k)
             if info != 'abort':
                 heapq.heappush(task_list, s.pack())
-
+        assert touched
 
     def bfs_with_heap(start_trace):
         start_trace.pack()
