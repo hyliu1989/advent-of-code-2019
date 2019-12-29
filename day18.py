@@ -16,16 +16,25 @@ class SearchTrace:
         if cls.min_step > value:
             cls.min_step = value
 
-    def __init__(self, to_init_search=False):
+    def __init__(self, to_init_search=False, quadrant=None):
         self.reachable_keys = np.zeros(26+1, np.bool)
         self.blockers =  np.zeros(26*2+1, np.bool)
         self.collected_keys = np.zeros(26+1, np.bool)
         self.step = np.uint32(0)
-        self.head = (40,40)
+        if quadrant is None:
+            self.head = (40,40)
+        elif quadrant == 0:
+            self.head = (39,41)
+        elif quadrant == 1:
+            self.head = (39,39)
+        elif quadrant == 2:
+            self.head = (41,39)
+        elif quadrant == 3:
+            self.head = (41,41)
         self.trace = []
 
         if to_init_search:
-            self._initial_search()
+            self._initial_search(quadrant)
 
 
     def __ge__(self, other):  return self.step >= other.step
@@ -58,9 +67,13 @@ class SearchTrace:
         self.collected_keys = np.unpackbits(self.collected_keys)[:27]
         return self
 
-    def _initial_search(self):
-        for quad in maputil.quadrants:
-        # for quad in [maputil.quadrants[1][1:2]]:
+    def _initial_search(self, quadrant):
+        if quadrant is None:
+            quadrants = maputil.quadrants
+        else:
+            quadrants = maputil.quadrants[quadrant:quadrant+1]
+        
+        for quad in quadrants:
             for seg in quad:
                 search_keys_in_seg_and_children_until_blocked(
                     seg, self.reachable_keys, self.blockers, self.collected_keys)
