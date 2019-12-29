@@ -164,26 +164,25 @@ def visualize_trimmed():
 
 
 def find_common_parent(seg1, seg2):
-    parent_list1 = [seg1]
-    while True:
-        p = parent_list1[-1].parent
-        parent_list1.append(p)
-        if p in range(4):
-            break
-    p = seg2
-    have_common_parent = True
-    while True:
-        if p in parent_list1:
-            break
-        if p in range(4):
-            have_common_parent = False
-            break
-        p = p.parent
+    assert seg1 is not seg2
+    assert seg1.quadrant == seg2.quadrant
+    def make_parent_list(seg):
+        parent_list = [seg]
+        while True:
+            p = parent_list[-1].parent
+            parent_list.append(p)
+            if p in range(4):
+                break
+        return parent_list
+    parent_list1 = make_parent_list(seg1)[::-1]
+    parent_list2 = make_parent_list(seg2)[::-1]
 
-    if have_common_parent:
-        return p, None
-    else:
-        return parent_list1[-1], p
+    for i, (p1, p2) in enumerate(zip(parent_list1, parent_list2)):
+        if p1 is not p2:
+            i -= 1
+            break
+    assert i != -1
+    return parent_list1[i]
 
 
 def count_steps_until_entering_the_ancestor(current_seg, *, ancestor_seg=None):
@@ -229,8 +228,8 @@ def move(current, destination):
         elif head_seg is dest_seg:
             steps += steps_in_segment[destination] - steps_in_segment[current]
         else:
-            p1, p2 = find_common_parent(head_seg, dest_seg)
-            assert p2 is None
+            p1 = find_common_parent(head_seg, dest_seg)
+
             # head and the key are in the same quadrant
             if p1 is dest_seg:
                 steps += steps_in_segment[current] - 1
