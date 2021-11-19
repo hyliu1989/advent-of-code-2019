@@ -1,3 +1,5 @@
+# source file: https://github.com/maxwell-k/semi-linear/blob/master/.github/workflows/semi-linear.yaml
+
 on:
   pull_request:
     types: [opened, synchronize, edited, reopened]
@@ -7,13 +9,17 @@ jobs:
     runs-on: ubuntu-latest
     name: Semi linear 2
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2  # After running actions/checkout@v2, the HEAD will be at a temporary merge commit.
       - name: Fetch all history so that later commands succeed
         run: git fetch --prune --unshallow
       - name: Fail if the branch requires a rebase
+        env:
+          BASE_BRANCH=${{ github.base_ref }}  # HEAD^1 after running actions/checkout@v2
+          HEAD_BRANCH=${{ github.head_ref }}  # HEAD^2 after running actions/checkout@v2
         run: |
-          test "$(git rev-parse origin/test-pr)" = "$(git merge-base origin/test-pr HEAD^2)"
-          test "$(git rev-parse origin/test-pr)" = "$(git merge-base origin/test-pr HEAD^2^1)"
+          test "$(git rev-parse origin/$BASE_BRANCH)" = "$(git merge-base origin/$BASE_BRANCH $HEAD_BRANCH)"
+          test "$(git rev-parse origin/$BASE_BRANCH)" = "$(git merge-base origin/$BASE_BRANCH $HEAD_BRANCH^1)"
+        # The second line with $HEAD_BRANCH^1 prevents invalid check pass after clicking the github update button.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
