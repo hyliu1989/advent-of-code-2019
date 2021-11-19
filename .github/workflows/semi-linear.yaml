@@ -1,4 +1,6 @@
-on: { push: { branches: [test-pr] } }
+on:
+  pull_request:
+    types: [opened, synchronize, edited, reopened]
 
 jobs:
   check:
@@ -11,7 +13,7 @@ jobs:
       - name: Fail if the branch requires a rebase
         run:
           test "$(git rev-parse origin/test-pr)" = "$(git merge-base
-          origin/test-pr HEAD^2)"
+          origin/test-pr HEAD)"
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
