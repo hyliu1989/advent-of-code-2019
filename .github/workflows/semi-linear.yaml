@@ -1,0 +1,20 @@
+on: { push: { branches: [test-pr] } }
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    name: Semi linear
+    steps:
+      - uses: actions/checkout@v2
+      - name: Fetch all history so that later commands succeed
+        run: git fetch --prune --unshallow
+      - name: Fail if the branch requires a rebase
+        run:
+          test "$(git rev-parse origin/test-pr)" = "$(git merge-base
+          origin/test-pr HEAD^2)"
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+#
+# /.github/workflows/semi-linear.yaml
