@@ -5,7 +5,7 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    name: Semi linear
+    name: Semi linear 2
     steps:
       - uses: actions/checkout@v2
       - name: Fetch all history so that later commands succeed
