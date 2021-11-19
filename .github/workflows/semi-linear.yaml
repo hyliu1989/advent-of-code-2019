@@ -14,8 +14,8 @@ jobs:
         run: git fetch --prune --unshallow
       - name: Fail if the branch requires a rebase
         env:
-          BASE_BRANCH=${{ github.base_ref }}  # HEAD^1 after running actions/checkout@v2
-          HEAD_BRANCH=${{ github.head_ref }}  # HEAD^2 after running actions/checkout@v2
+          BASE_BRANCH: ${{ github.base_ref }}  # HEAD^1 after running actions/checkout@v2
+          HEAD_BRANCH: ${{ github.head_ref }}  # HEAD^2 after running actions/checkout@v2
         run: |
           test "$(git rev-parse origin/$BASE_BRANCH)" = "$(git merge-base origin/$BASE_BRANCH $HEAD_BRANCH)"
           test "$(git rev-parse origin/$BASE_BRANCH)" = "$(git merge-base origin/$BASE_BRANCH $HEAD_BRANCH^1)"
