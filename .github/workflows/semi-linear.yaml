@@ -14,12 +14,14 @@ jobs:
         run: git fetch --prune --unshallow
       - name: Fail if the branch requires a rebase
         env:
-          BASE_BRANCH: ${{ github.base_ref }}  # HEAD^1 after running actions/checkout@v2
-          HEAD_BRANCH: ${{ github.head_ref }}  # HEAD^2 after running actions/checkout@v2
+          BASE_BRANCH: ${{ github.base_ref }}  # equal to HEAD^1 after running actions/checkout@v2
+          HEAD_BRANCH: ${{ github.head_ref }}  # equal to HEAD^2 after running actions/checkout@v2
         run: |
           test "$(git rev-parse origin/$BASE_BRANCH)" = "$(git merge-base origin/$BASE_BRANCH origin/$HEAD_BRANCH)"
           test "$(git rev-parse origin/$BASE_BRANCH)" = "$(git merge-base origin/$BASE_BRANCH origin/$HEAD_BRANCH^1)"
         # The second line with $HEAD_BRANCH^1 prevents invalid check pass after clicking the github update button.
+        # Known issue: if a failed due to the github update button, push another commit will make the PR falsely pass
+        # the checking.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
